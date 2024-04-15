@@ -17,7 +17,8 @@ const INITIAL_SYMBOLS = [
   "ATOMUSDT",
   "BOMEUSDT",
   "WIFUSDT",
-  "FLOKIUSDT",
+  "1000FLOKIUSDT",
+  "ENAUSDT",
 ];
 const INITIAL_SYMBOL_INTERVAL_RSI_CANDLES: SymbolIntervalRsiCandles[] =
   INITIAL_SYMBOLS.map((symbol) => ({
@@ -40,6 +41,12 @@ const INITIAL_SYMBOL_INTERVAL_RSI_CANDLES: SymbolIntervalRsiCandles[] =
       },
       {
         interval: "OneDay",
+      },
+      {
+        interval: "OneWeek",
+      },
+      {
+        interval: "OneMonth",
       },
     ],
   }));

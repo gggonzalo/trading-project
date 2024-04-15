@@ -13,20 +13,19 @@ function renderRsiCandleValue(value?: number) {
       </td>
     );
 
-  // TODO: Add darker colors for 20-30 and 70-80
   // TODO: Add indicator when close is equal to high or low (borders?)
   return (
     <td
       className={classNames("px-1 text-xs", {
+        "text-red-600": value < 50,
+        "text-green-600": value > 50,
+        "!text-white": value <= 30 || value >= 70,
         "bg-red-800": value <= 10,
         "bg-red-600": value <= 20,
         "bg-red-400": value <= 30,
         "bg-green-400": value >= 70,
         "bg-green-600": value >= 80,
         "bg-green-800": value >= 90,
-        "text-red-600": value < 50,
-        "text-green-600": value > 50,
-        "!text-white": value <= 30 || value >= 70,
       })}
     >
       <span className="block min-w-8">{value.toFixed(2)}</span>
@@ -60,6 +59,7 @@ function SymbolRsiCandlesCard({
               <TooltipTrigger asChild>
                 <tr key={interval}>
                   <td className="pr-2">
+                    {/* TODO: Add button to show a chart with rsi on top */}
                     {/* TODO: Add the interval toggling logic later */}
                     <Toggle
                       size="xs"
@@ -76,6 +76,7 @@ function SymbolRsiCandlesCard({
                   {renderRsiCandleValue(candle?.high)}
                 </tr>
               </TooltipTrigger>
+              {/* TODO: Fix validateDOMNesting error */}
               <TooltipContent className="bg-neutral-800 text-white">
                 <span>
                   {candle?.time

@@ -24,7 +24,7 @@ public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbConte
             return;
         }
 
-        var openOrdersResult = await _binanceRestClient.SpotApi.Trading.GetOpenOrdersAsync();
+        var openOrdersResult = await _binanceRestClient.UsdFuturesApi.Trading.GetOpenOrdersAsync();
         var openTargetRsiOrders = openOrdersResult.Data.Where(o => o.ClientOrderId.StartsWith("TROI_"));
 
         foreach (var instruction in targetRsiOrderInstructionsToCheck)
@@ -53,17 +53,19 @@ public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbConte
                 // Order already exists so we need to update it
                 if (instructedOrder.Status == OrderStatus.New)
                 {
-                    // TODO: Handle CancelReplaceMode
-                    await _binanceRestClient.SpotApi.Trading.ReplaceOrderAsync(
+                    // TODO: Handle CancelReplaceMode (Spot) and cancel/place errors (Futures)
+                    await _binanceRestClient.UsdFuturesApi.Trading.CancelOrderAsync(instructedOrder.Symbol, origClientOrderId: instructedOrder.ClientOrderId);
+
+                    await binanceRestClient.UsdFuturesApi.Account.ChangeMarginTypeAsync(instruction.Symbol, FuturesMarginType.Isolated);
+                    await binanceRestClient.UsdFuturesApi.Account.ChangeInitialLeverageAsync(instruction.Symbol, 1);
+
+                    await _binanceRestClient.UsdFuturesApi.Trading.PlaceOrderAsync(
                         instructedOrder.Symbol,
                         instructedOrder.Side,
-                        SpotOrderType.Limit,
-                        CancelReplaceMode.StopOnFailure,
-                        // TODO: Calculate this value in job
+                        FuturesOrderType.Limit,
                         quantity: baseAssetQuantityFromTargetPrice,
                         price: priceForTargetRsi,
                         timeInForce: TimeInForce.GoodTillCanceled,
-                        cancelClientOrderId: instructedOrder.ClientOrderId,
                         newClientOrderId: instructedOrder.ClientOrderId);
 
                     continue;

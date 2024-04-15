@@ -14,5 +14,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.3"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.3"/>
+    <PackageReference Include="OneSignalApi" Version="2.0.2"/>
+    <PackageReference Include="RestSharp" Version="110.2.0"/>
   </ItemGroup>
 </Project>

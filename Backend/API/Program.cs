@@ -5,6 +5,7 @@ using CryptoExchange.Net.Authentication;
 using Microsoft.EntityFrameworkCore;
 using NanoidDotNet;
 using Quartz;
+using RestSharp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,12 +43,12 @@ var configuration = builder.Configuration;
 var binanceApiCredentials = new ApiCredentials(configuration["BinanceApi:Key"], configuration["BinanceApi:Secret"]);
 
 builder.Services.AddBinance(restOptions =>
-    {
-        restOptions.ApiCredentials = binanceApiCredentials;
-    }, socketOptions =>
-    {
-        socketOptions.ApiCredentials = binanceApiCredentials;
-    });
+{
+    restOptions.ApiCredentials = binanceApiCredentials;
+}, socketOptions =>
+{
+    socketOptions.ApiCredentials = binanceApiCredentials;
+});
 
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
@@ -65,7 +66,10 @@ builder.Services.AddQuartz(q =>
 });
 builder.Services.AddQuartzHostedService();
 
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+
 builder.Services.AddSingleton<BinanceUtilities>();
+builder.Services.AddSingleton<IPushNotificationsService, OneSignalService>();
 builder.Services.AddSingleton<OrdersMonitorService>();
 
 var app = builder.Build();
@@ -78,8 +82,10 @@ app.UseCors();
 app.MapGet("/symbols", async (IBinanceRestClient binanceRestClient, AppDbContext dbContext) =>
 {
     // TODO: Replace hardcoded list with a list of symbols from the database
-    var exchangeInfoResult = await binanceRestClient.SpotApi.ExchangeData.GetExchangeInfoAsync(["BTCUSDT", "ATOMUSDT", "ADAUSDT", "DOTUSDT", "HBARUSDT", "INJUSDT", "BOMEUSDT", "FLOKIUSDT", "WIFUSDT"]);
-    var symbolsInfo = exchangeInfoResult.Data.Symbols;
+    var symbols = new List<string> { "BTCUSDT", "ATOMUSDT", "ADAUSDT", "DOTUSDT", "HBARUSDT", "INJUSDT", "BOMEUSDT", "FLOKIUSDT", "WIFUSDT" };
+
+    var exchangeInfoResult = await binanceRestClient.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync();
+    var symbolsInfo = exchangeInfoResult.Data.Symbols.Where(s => symbols.Contains(s.Name));
 
     var symbolsWithNumOrders = await Task.WhenAll(
         symbolsInfo.Select(async i =>
@@ -103,7 +109,7 @@ app.MapGet("/symbols", async (IBinanceRestClient binanceRestClient, AppDbContext
 
 app.MapGet("/klines", async (string symbol, KlineInterval interval, IBinanceRestClient binanceRestClient) =>
 {
-    var klinesResult = await binanceRestClient.SpotApi.ExchangeData.GetKlinesAsync(symbol, interval, limit: 1000);
+    var klinesResult = await binanceRestClient.UsdFuturesApi.ExchangeData.GetKlinesAsync(symbol, interval, limit: 1000);
     var klines = klinesResult.Data;
 
     return klines.Select(k => new
@@ -115,15 +121,6 @@ app.MapGet("/klines", async (string symbol, KlineInterval interval, IBinanceRest
         Close = k.ClosePrice,
     });
 });
-
-
-// app.MapPost("/order", async (OrderRequest orderRequest, IBinanceRestClient binanceRestClient) =>
-// {
-//     var placedOrderResult = await binanceRestClient.SpotApi.Trading.PlaceOrderAsync(orderRequest.Symbol, orderRequest.Side, orderRequest.Type, orderRequest.Quantity, price: orderRequest.Price, timeInForce: TimeInForce.GoodTillCanceled);
-
-//     return placedOrderResult.Data;
-// });
-
 
 app.MapGet("/target-rsi-order-instructions", async (string symbol, AppDbContext dbContext) =>
 {
@@ -161,11 +158,13 @@ app.MapPost("/target-rsi-order-instructions", async (CreateTargetRsiOrderInstruc
     var baseAssetQuantityFromTargetPrice = Math.Round(instruction.QuoteQty / priceForTargetRsi, quantityDecimalPlaces);
 
     // 'Commiting' both changes
+    await binanceRestClient.UsdFuturesApi.Account.ChangeMarginTypeAsync(instruction.Symbol, FuturesMarginType.Isolated);
+    await binanceRestClient.UsdFuturesApi.Account.ChangeInitialLeverageAsync(instruction.Symbol, 1);
 
-    var placedOrderResult = await binanceRestClient.SpotApi.Trading.PlaceOrderAsync(
+    var placedOrderResult = await binanceRestClient.UsdFuturesApi.Trading.PlaceOrderAsync(
         instruction.Symbol,
         instruction.Side,
-        SpotOrderType.Limit,
+        FuturesOrderType.Limit,
         quantity: baseAssetQuantityFromTargetPrice,
         price: priceForTargetRsi,
         timeInForce: TimeInForce.GoodTillCanceled,
@@ -188,7 +187,7 @@ app.MapDelete("/target-rsi-order-instructions/{instructionId}", async (Guid inst
         return Results.NotFound();
     }
 
-    var cancelOrderResult = await binanceRestClient.SpotApi.Trading.CancelOrderAsync(symbol, origClientOrderId: instruction.OrderId);
+    var cancelOrderResult = await binanceRestClient.UsdFuturesApi.Trading.CancelOrderAsync(symbol, origClientOrderId: instruction.OrderId);
 
     dbContext.TargetRsiOrderInstructions.Remove(instruction);
     await dbContext.SaveChangesAsync();
