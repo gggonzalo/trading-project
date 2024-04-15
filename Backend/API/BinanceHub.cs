@@ -54,11 +54,12 @@ public class ClientStreamsManager(IHubContext<BinanceHub> hubContext, string cli
 {
     private readonly IHubContext<BinanceHub> _hubContext = hubContext;
     private readonly string _clientConnectionId = clientConnectionId;
+    private readonly BinanceRestClient _binanceRestClient = new BinanceRestClient();
     private readonly BinanceSocketClient _binanceSocketClient = new BinanceSocketClient();
 
     public void SubscribeToKlineUpdates(string symbol, KlineInterval interval)
     {
-        _ = _binanceSocketClient.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(
+        _ = _binanceSocketClient.UsdFuturesApi.SubscribeToKlineUpdatesAsync(
             symbol,
             interval,
             e =>
@@ -91,8 +92,8 @@ public class ClientStreamsManager(IHubContext<BinanceHub> hubContext, string cli
 
             foreach (var interval in intervals)
             {
-                var klinesResult = await _binanceSocketClient.SpotApi.ExchangeData.GetKlinesAsync(symbol, interval);
-                var klines = klinesResult.Data.Result;
+                var klinesResult = await _binanceRestClient.UsdFuturesApi.ExchangeData.GetKlinesAsync(symbol, interval);
+                var klines = klinesResult.Data;
 
                 var rsiCandlesService = new RsiCandlesService(klines);
 
@@ -100,7 +101,7 @@ public class ClientStreamsManager(IHubContext<BinanceHub> hubContext, string cli
             }
         }
 
-        _ = _binanceSocketClient.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(
+        _ = _binanceSocketClient.UsdFuturesApi.SubscribeToKlineUpdatesAsync(
             symbols,
             intervals,
             e =>
