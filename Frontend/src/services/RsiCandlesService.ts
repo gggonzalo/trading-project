@@ -1,23 +1,23 @@
-import { Kline, RsiCandle } from "@/types";
+import { Candle, RsiCandle } from "@/types";
 
 export default class RsiCandlesService {
   constructor(private lookbackPeriods: number = 14) {}
 
-  generateRsiCandles(klines: Kline[]): RsiCandle[] {
+  generateRsiCandles(candles: Candle[]): RsiCandle[] {
     const { lookbackPeriods } = this;
 
-    if (klines.length <= lookbackPeriods)
+    if (candles.length <= lookbackPeriods)
       // Return array with empty objects if there's not enough data
-      return Array.from({ length: klines.length }, (_, i) => ({
-        time: klines[i].time,
+      return Array.from({ length: candles.length }, (_, i) => ({
+        time: candles[i].time,
       }));
 
-    const candles: RsiCandle[] = [];
+    const rsiCandles: RsiCandle[] = [];
 
-    // Fill the candles array with empty objects for klines that don't have enough data before
+    // Fill the rsi candles array with empty objects for candles that don't have enough data before
     for (let i = 0; i < lookbackPeriods; i++) {
-      candles.push({
-        time: klines[i].time,
+      rsiCandles.push({
+        time: candles[i].time,
       });
     }
 
@@ -26,7 +26,7 @@ export default class RsiCandlesService {
     let avgCloseLoss = 0;
 
     for (let i = 1; i < lookbackPeriods; i++) {
-      const closePriceDiff = klines[i].close - klines[i - 1].close;
+      const closePriceDiff = candles[i].close - candles[i - 1].close;
 
       if (closePriceDiff > 0) {
         avgCloseGain += closePriceDiff;
@@ -39,10 +39,10 @@ export default class RsiCandlesService {
     avgCloseLoss /= lookbackPeriods;
 
     // Calculate RS and RSI
-    for (let i = lookbackPeriods; i < klines.length; i++) {
-      const highPriceDiff = klines[i].high - klines[i - 1].close;
-      const lowPriceDiff = klines[i].low - klines[i - 1].close;
-      const closePriceDiff = klines[i].close - klines[i - 1].close;
+    for (let i = lookbackPeriods; i < candles.length; i++) {
+      const highPriceDiff = candles[i].high - candles[i - 1].close;
+      const lowPriceDiff = candles[i].low - candles[i - 1].close;
+      const closePriceDiff = candles[i].close - candles[i - 1].close;
 
       let highGain = 0;
       let highLoss = 0;
@@ -91,14 +91,14 @@ export default class RsiCandlesService {
       const lowRsi = 100 - 100 / (1 + lowRs);
       const closeRsi = 100 - 100 / (1 + closeRs);
 
-      candles.push({
-        time: klines[i].time,
+      rsiCandles.push({
+        time: candles[i].time,
         high: highRsi,
         low: lowRsi,
         close: closeRsi,
       });
     }
 
-    return candles;
+    return rsiCandles;
   }
 }

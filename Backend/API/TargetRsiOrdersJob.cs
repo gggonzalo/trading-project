@@ -8,9 +8,7 @@ using Quartz;
 
 public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbContext appDbContext, BinanceUtilities binanceUtilities) : IJob
 {
-    private readonly IBinanceRestClient _binanceRestClient = binanceRestClient;
     private readonly AppDbContext _appDbContext = appDbContext;
-    private readonly BinanceUtilities _binanceUtilities = binanceUtilities;
 
     public async Task Execute(IJobExecutionContext context)
     {
@@ -24,7 +22,7 @@ public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbConte
             return;
         }
 
-        var openOrdersResult = await _binanceRestClient.UsdFuturesApi.Trading.GetOpenOrdersAsync();
+        var openOrdersResult = await binanceRestClient.UsdFuturesApi.Trading.GetOpenOrdersAsync();
         var openTargetRsiOrders = openOrdersResult.Data.Where(o => o.ClientOrderId.StartsWith("TROI_"));
 
         foreach (var instruction in targetRsiOrderInstructionsToCheck)
@@ -35,31 +33,30 @@ public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbConte
             if (instructedOrder == null) continue;
 
             // TODO: Group by instruction symbol and interval and fetch klines for each instruction group to and use it for all the items in the group
-            var closedKlinesUntilNow = await _binanceUtilities.GetClosedKlinesUntilNow(
+            var closedKlinesUntilNow = await binanceUtilities.GetClosedKlinesUntilNow(
                 instruction.Symbol,
                 instruction.Interval,
                 jobFireTime
             );
             var closePrices = closedKlinesUntilNow.Select(k => k.ClosePrice).ToList();
 
-            var (priceDecimalPlaces, quantityDecimalPlaces) = await _binanceUtilities.GetSymbolPriceAndQuantityDecimalPlaces(instruction.Symbol);
+            var (priceDecimalPlaces, quantityDecimalPlaces) = await binanceUtilities.GetSymbolPriceAndQuantityDecimalPlaces(instruction.Symbol);
 
             var priceForTargetRsi = Math.Round(RsiCalculatorService.GetPriceForTargetRsi(closePrices, instruction.TargetRsi), priceDecimalPlaces);
             var baseAssetQuantityFromTargetPrice = Math.Round(instruction.QuoteQty / priceForTargetRsi, quantityDecimalPlaces);
 
-            // TODO: Improve this catching of exceptions
             try
             {
                 // Order already exists so we need to update it
                 if (instructedOrder.Status == OrderStatus.New)
                 {
                     // TODO: Handle CancelReplaceMode (Spot) and cancel/place errors (Futures)
-                    await _binanceRestClient.UsdFuturesApi.Trading.CancelOrderAsync(instructedOrder.Symbol, origClientOrderId: instructedOrder.ClientOrderId);
+                    await binanceRestClient.UsdFuturesApi.Trading.CancelOrderAsync(instructedOrder.Symbol, origClientOrderId: instructedOrder.ClientOrderId);
 
                     await binanceRestClient.UsdFuturesApi.Account.ChangeMarginTypeAsync(instruction.Symbol, FuturesMarginType.Isolated);
                     await binanceRestClient.UsdFuturesApi.Account.ChangeInitialLeverageAsync(instruction.Symbol, 1);
 
-                    await _binanceRestClient.UsdFuturesApi.Trading.PlaceOrderAsync(
+                    await binanceRestClient.UsdFuturesApi.Trading.PlaceOrderAsync(
                         instructedOrder.Symbol,
                         instructedOrder.Side,
                         FuturesOrderType.Limit,
@@ -71,10 +68,9 @@ public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbConte
                     continue;
                 }
             }
-            catch (Exception e)
+            catch
             {
-
-                throw;
+                // TODO: Improve this catching of exceptions
             }
         }
     }

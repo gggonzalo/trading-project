@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<TargetRsiOrderInstruction> TargetRsiOrderInstructions { get; set; }
+    public DbSet<TargetRsiOrderInstruction> TargetRsiOrderInstructions { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

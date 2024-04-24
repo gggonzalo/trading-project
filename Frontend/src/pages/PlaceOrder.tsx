@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/components/ui/use-toast";
 import RsiCandlesService from "@/services/RsiCandlesService";
 import {
   Interval,
@@ -59,6 +60,8 @@ function PlaceOrder() {
   const [targetRsiOrderInstructions, setTargetRsiOrderInstructions] = useState<
     TargetRsiOrderInstruction[]
   >([]);
+
+  const { toast } = useToast();
 
   const handleDataChartApisReady = useCallback(
     (chartApi: IChartApi, seriesApi: ISeriesApi<"Candlestick">) => {
@@ -150,7 +153,7 @@ function PlaceOrder() {
 
     // todo: add startTime and endTime to the query when lazy loading is implemented
     fetch(
-      `http://localhost:5215/klines?symbol=${selectedSymbolDetails.name}&interval=${selectedInterval}`,
+      `http://localhost:5215/candles?symbol=${selectedSymbolDetails.name}&interval=${selectedInterval}`,
     )
       .then((response) => response.json())
       .then((data: any) => {
@@ -165,35 +168,33 @@ function PlaceOrder() {
     if (!selectedSymbolDetails || !selectedInterval) return;
 
     const connection = new HubConnectionBuilder()
-      .withUrl("http://localhost:5215/binance-hub")
+      .withUrl("http://localhost:5215/candles-hub")
       .build();
 
-    connection.on("KlineUpdate", (kline) => {
-      dataSeriesApi.current?.update(kline);
+    connection.on("CandleUpdate", ({ candle }: any) => {
+      dataSeriesApi.current?.update(candle);
     });
 
-    connection
-      .start()
-      .then(() => {
-        // console.log("SignalR Connected");
-
-        connection.invoke(
-          "SubscribeToKlineUpdates",
-          selectedSymbolDetails.name,
-          selectedInterval,
-        );
-      })
-      .catch((err) => console.error("SignalR Connection Error: ", err));
+    connection.start().then(() => {
+      connection
+        .invoke(
+          "SubscribeToCandleUpdates",
+          [selectedSymbolDetails.name],
+          [selectedInterval],
+        )
+        .catch((e) => {
+          toast({
+            title: "Error subscribing to candle updates.",
+            description: e.message,
+            variant: "destructive",
+          });
+        });
+    });
 
     return () => {
-      connection
-        .stop()
-        .then(() => {
-          /* console.log("SignalR Disconnected") */
-        })
-        .catch((err) => console.error("SignalR Disconnection Error: ", err));
+      connection.stop();
     };
-  }, [selectedSymbolDetails, selectedInterval]);
+  }, [selectedSymbolDetails, selectedInterval, toast]);
 
   useEffect(() => {
     if (!selectedSymbolDetails?.priceIncrement || !selectedInterval) return;
@@ -217,7 +218,7 @@ function PlaceOrder() {
       selectedInterval === "FiveMinutes" ||
       selectedInterval === "FifteenMinutes" ||
       selectedInterval === "OneHour" ||
-      selectedInterval === "FourHours"
+      selectedInterval === "FourHour"
     ) {
       const timeScaleOptions = {
         timeScale: {

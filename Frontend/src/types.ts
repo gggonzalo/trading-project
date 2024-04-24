@@ -22,7 +22,7 @@ export const Interval = {
 export type IntervalKey = keyof typeof Interval;
 export type IntervalValue = (typeof Interval)[keyof typeof Interval];
 
-export interface Kline {
+export interface Candle {
   time: number;
   open: number;
   high: number;

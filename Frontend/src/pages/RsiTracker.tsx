@@ -1,4 +1,5 @@
 import SymbolRsiCandlesCard from "@/components/SymbolRsiCandlesCard";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Interval,
   IntervalKey,
@@ -62,11 +63,13 @@ function RsiTracker() {
     SymbolIntervalRsiCandles[]
   >(INITIAL_SYMBOL_INTERVAL_RSI_CANDLES);
 
+  const { toast } = useToast();
+
   const connectionRef = useRef<HubConnection | null>(null);
 
   useEffect(() => {
     const connection = new HubConnectionBuilder()
-      .withUrl("http://localhost:5215/binance-hub")
+      .withUrl("http://localhost:5215/rsi-candles-hub")
       .build();
     connectionRef.current = connection;
 
@@ -130,26 +133,29 @@ function RsiTracker() {
       },
     );
 
-    connection
-      .start()
-      .then(() => {
-        // TODO: Await this invoke to wait for the backend to full create the subscription
-        connection.invoke(
-          "SubscribeToLastRsiCandleUpdates",
+    connection.start().then(() => {
+      // TODO: Await this invoke to wait for the backend to full create the subscription? Needed if we want to show a spinner
+      connection
+        .invoke(
+          "SubscribeToRsiCandleUpdates",
           INITIAL_SYMBOLS,
           Object.values(Interval),
-        );
-      })
-      .catch((err) => console.error("SignalR Connection Error: ", err));
+        )
+        .catch((e) => {
+          toast({
+            title: "Error subscribing to RSI candle updates.",
+            description: e.message,
+            variant: "destructive",
+          });
+        });
+    });
 
     return () => {
       setSymbolIntervalRsiCandles(INITIAL_SYMBOL_INTERVAL_RSI_CANDLES);
 
-      connection
-        .stop()
-        .catch((err) => console.error("SignalR Disconnection Error: ", err));
+      connection.stop();
     };
-  }, []);
+  }, [toast]);
 
   return (
     <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

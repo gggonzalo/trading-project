@@ -5,8 +5,6 @@ using Polly;
 
 public class BinanceUtilities(IBinanceRestClient binanceRestClient)
 {
-    IBinanceRestClient _binanceRestClient = binanceRestClient;
-
     public async Task<IEnumerable<IBinanceKline>> GetClosedKlinesUntilNow(string symbol, KlineInterval interval, DateTimeOffset currentTime)
     {
         try
@@ -17,7 +15,7 @@ public class BinanceUtilities(IBinanceRestClient binanceRestClient)
 
             var klines = await getKlinesRetryPolicy.ExecuteAsync(async () =>
              {
-                 var klinesResult = await _binanceRestClient.UsdFuturesApi.ExchangeData.GetKlinesAsync(symbol, interval);
+                 var klinesResult = await binanceRestClient.UsdFuturesApi.ExchangeData.GetKlinesAsync(symbol, interval);
 
                  var klines = klinesResult.Data;
 
@@ -44,7 +42,7 @@ public class BinanceUtilities(IBinanceRestClient binanceRestClient)
     public async Task<(int, int)> GetSymbolPriceAndQuantityDecimalPlaces(string symbol)
     {
         // TODO: Improve this
-        var exchangeInfoResult = await _binanceRestClient.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync();
+        var exchangeInfoResult = await binanceRestClient.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync();
         var symbolInfo = exchangeInfoResult.Data.Symbols.First(s => s.Name == symbol);
 
         var priceIncrement = symbolInfo.PriceFilter!.TickSize.ToString().TrimEnd('0');

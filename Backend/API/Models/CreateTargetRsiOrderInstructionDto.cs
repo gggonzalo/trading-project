@@ -1,10 +1,10 @@
 using Binance.Net.Enums;
 
-public class CreateTargetRsiOrderInstructionDto
+public record CreateTargetRsiOrderInstructionDto
 {
-    public string Symbol { get; set; }
-    public OrderSide Side { get; set; }
-    public decimal QuoteQty { get; set; }
-    public KlineInterval Interval { get; set; }
-    public decimal TargetRsi { get; set; }
+    public required string Symbol { get; init; }
+    public required OrderSide Side { get; init; }
+    public required decimal QuoteQty { get; init; }
+    public required KlineInterval Interval { get; init; }
+    public required decimal TargetRsi { get; init; }
 }

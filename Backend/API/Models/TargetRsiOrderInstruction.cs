@@ -1,14 +1,13 @@
 
 using Binance.Net.Enums;
 
-public class TargetRsiOrderInstruction
+public record TargetRsiOrderInstruction
 {
-    public Guid Id { get; set; }
-    public string OrderId { get; set; }
-    public string Symbol { get; set; }
-    public OrderSide Side { get; set; }
-    // TODO: Calculate this value in job
-    public decimal QuoteQty { get; set; }
-    public KlineInterval Interval { get; set; }
-    public decimal TargetRsi { get; set; }
+    public Guid Id { get; init; }
+    public required string OrderId { get; init; }
+    public required string Symbol { get; init; }
+    public required OrderSide Side { get; init; }
+    public required decimal QuoteQty { get; init; }
+    public required KlineInterval Interval { get; init; }
+    public required decimal TargetRsi { get; init; }
 }

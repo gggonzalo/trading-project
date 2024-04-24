@@ -72,6 +72,12 @@ builder.Services.AddSingleton<BinanceUtilities>();
 builder.Services.AddSingleton<IPushNotificationsService, OneSignalService>();
 builder.Services.AddSingleton<OrdersMonitorService>();
 
+// TODO: Singleton works for now but it will make more sense when reuse streams for multiple clients
+builder.Services.AddSingleton<CandlesService>();
+builder.Services.AddSingleton<RsiCandlesService>();
+
+builder.Services.AddSingleton<ClientsStreamingService>();
+
 var app = builder.Build();
 
 var ordersMonitorService = app.Services.GetRequiredService<OrdersMonitorService>();
@@ -107,8 +113,9 @@ app.MapGet("/symbols", async (IBinanceRestClient binanceRestClient, AppDbContext
     return symbolsWithNumOrders;
 });
 
-app.MapGet("/klines", async (string symbol, KlineInterval interval, IBinanceRestClient binanceRestClient) =>
+app.MapGet("/candles", async (string symbol, KlineInterval interval, IBinanceRestClient binanceRestClient) =>
 {
+    // TODO: Use candles service instead
     var klinesResult = await binanceRestClient.UsdFuturesApi.ExchangeData.GetKlinesAsync(symbol, interval, limit: 1000);
     var klines = klinesResult.Data;
 
@@ -146,6 +153,7 @@ app.MapPost("/target-rsi-order-instructions", async (CreateTargetRsiOrderInstruc
     dbContext.TargetRsiOrderInstructions.Add(instruction);
 
     // Creating the order
+    // TODO: Move this method to candles service
     var closedKlinesUntilNow = await binanceUtilities.GetClosedKlinesUntilNow(
         instruction.Symbol,
         instruction.Interval,
@@ -195,6 +203,7 @@ app.MapDelete("/target-rsi-order-instructions/{instructionId}", async (Guid inst
     return Results.Ok();
 });
 
-app.MapHub<BinanceHub>("/binance-hub");
+app.MapHub<CandlesHub>("/candles-hub");
+app.MapHub<RsiCandlesHub>("/rsi-candles-hub");
 
 app.Run();

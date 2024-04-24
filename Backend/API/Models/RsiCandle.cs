@@ -1,7 +1,7 @@
-public class RsiCandle
+public record RsiCandle
 {
-    public DateTime Time { get; set; }
-    public decimal High { get; set; }
-    public decimal Low { get; set; }
-    public decimal Close { get; set; }
+    public required DateTime Time { get; init; }
+    public decimal? High { get; init; }
+    public decimal? Low { get; init; }
+    public decimal? Close { get; init; }
 }
