@@ -18,8 +18,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import RsiCandlesService from "@/services/RsiCandlesService";
 import {
-  Interval,
   IntervalKey,
+  IntervalObj,
   SymbolDetails,
   TargetRsiOrderInstruction,
 } from "@/types";
@@ -311,7 +311,7 @@ function PlaceOrder() {
             <SelectValue placeholder="Select interval" />
           </SelectTrigger>
           <SelectContent>
-            {Object.keys(Interval).map((interval) => (
+            {Object.keys(IntervalObj).map((interval) => (
               <SelectItem key={interval} value={interval}>
                 {mapIntervalToLabel(interval as IntervalKey)}
               </SelectItem>

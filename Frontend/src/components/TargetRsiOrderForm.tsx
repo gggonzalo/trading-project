@@ -4,7 +4,7 @@ import Decimal from "decimal.js";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Interval, IntervalKey, OrderSide, SymbolDetails } from "../types";
+import { IntervalKey, IntervalObj, OrderSide, SymbolDetails } from "../types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +40,7 @@ function createFormSchema(symbolDetails: SymbolDetails) {
 
   return z.object({
     side: z.nativeEnum(OrderSide),
-    interval: z.nativeEnum(Interval),
+    interval: z.nativeEnum(IntervalObj),
     quoteQty: z.string().superRefine((val, ctx) => {
       if (!val) {
         ctx.addIssue({
@@ -220,7 +220,7 @@ export default function TargetRsiOrderForm({
               <FormControl>
                 <Select
                   onValueChange={(v) =>
-                    field.onChange(Interval[v as IntervalKey])
+                    field.onChange(IntervalObj[v as IntervalKey])
                   }
                   defaultValue={field.value ? field.value.toString() : ""}
                 >
@@ -228,7 +228,7 @@ export default function TargetRsiOrderForm({
                     <SelectValue placeholder="Select interval" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.keys(Interval).map((interval) => {
+                    {Object.keys(IntervalObj).map((interval) => {
                       return (
                         <SelectItem key={interval} value={interval}>
                           {mapIntervalToLabel(interval as IntervalKey)}

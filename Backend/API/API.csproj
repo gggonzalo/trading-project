@@ -11,6 +11,12 @@
     <None Include="TargetRsiOrdersJob.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Hubs\RsiCandlesHub.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Hubs\RsiCandlesHub.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="Binance.Net" Version="9.6.1" />

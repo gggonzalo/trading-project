@@ -7,8 +7,18 @@ export interface SymbolDetails {
   orderInstructionsCount: number;
 }
 
-// Make sure order is same as in backend
-export const Interval = {
+export type Interval =
+  | "OneMinute"
+  | "FiveMinutes"
+  | "FifteenMinutes"
+  | "OneHour"
+  | "FourHour"
+  | "OneDay"
+  | "OneWeek"
+  | "OneMonth";
+
+// TODO: Remove these types below. If need seconds, create util functions to convert to seconds.
+export const IntervalObj = {
   OneMinute: 60,
   FiveMinutes: 300,
   FifteenMinutes: 900,
@@ -19,8 +29,8 @@ export const Interval = {
   OneMonth: 2592000,
 } as const;
 
-export type IntervalKey = keyof typeof Interval;
-export type IntervalValue = (typeof Interval)[keyof typeof Interval];
+export type IntervalKey = keyof typeof IntervalObj;
+export type IntervalValue = (typeof IntervalObj)[keyof typeof IntervalObj];
 
 export interface Candle {
   time: number;
@@ -41,12 +51,21 @@ export enum OrderSide {
   Buy = "Buy",
   Sell = "Sell",
 }
+
+export interface Alert {
+  id: string;
+  symbol: string;
+  valueOnCreation: number;
+  valueTarget: number;
+  createdAt: string;
+}
+
 export interface TargetRsiOrderInstruction {
   id: string;
   symbol: string;
   side: OrderSide;
   quoteQty: number;
-  interval: keyof typeof Interval;
+  interval: keyof typeof IntervalObj;
   targetRsi: number;
 }
 

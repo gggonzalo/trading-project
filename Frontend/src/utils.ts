@@ -29,6 +29,7 @@ export function syncCrosshair(
   chart.clearCrosshairPosition();
 }
 
+// TODO: Remove when old components are removed
 export function mapIntervalToLabel(interval: IntervalKey) {
   switch (interval) {
     case "OneMinute":
@@ -48,4 +49,26 @@ export function mapIntervalToLabel(interval: IntervalKey) {
     case "OneMonth":
       return "1M";
   }
+}
+
+export function convertLocalEpochToUtcDate(localEpoch: number) {
+  return new Date(
+    new Date(localEpoch * 1000).toLocaleString("en-US", { timeZone: "UTC" }),
+  );
+}
+
+export function convertCandleEpochToLocal(originalEpoch: number) {
+  const d = new Date(originalEpoch * 1000);
+
+  return (
+    Date.UTC(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      d.getHours(),
+      d.getMinutes(),
+      d.getSeconds(),
+      d.getMilliseconds(),
+    ) / 1000
+  );
 }

@@ -1,8 +1,8 @@
 import SymbolRsiCandlesCard from "@/components/SymbolRsiCandlesCard";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  Interval,
   IntervalKey,
+  IntervalObj,
   RsiCandle,
   SymbolIntervalRsiCandles,
 } from "@/types";
@@ -139,7 +139,7 @@ function RsiTracker() {
         .invoke(
           "SubscribeToRsiCandleUpdates",
           INITIAL_SYMBOLS,
-          Object.values(Interval),
+          Object.values(IntervalObj),
         )
         .catch((e) => {
           toast({

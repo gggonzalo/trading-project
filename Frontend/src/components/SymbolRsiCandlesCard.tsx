@@ -1,4 +1,4 @@
-import { Interval, IntervalKey, IntervalRsiCandle } from "@/types";
+import { IntervalKey, IntervalObj, IntervalRsiCandle } from "@/types";
 import { mapIntervalToLabel } from "@/utils";
 import { TooltipArrow } from "@radix-ui/react-tooltip";
 import classNames from "classnames";
@@ -22,8 +22,8 @@ function renderRsiCandleValue(value?: number) {
         "!text-white": value <= 30 || value >= 70,
         "bg-red-800": value <= 10,
         "bg-red-600": value <= 20,
-        "bg-red-400": value <= 30,
-        "bg-green-400": value >= 70,
+        "bg-[#ef5350]": value <= 30,
+        "bg-[#26a69a]": value >= 70,
         "bg-green-600": value >= 80,
         "bg-green-800": value >= 90,
       })}
@@ -45,7 +45,7 @@ function SymbolRsiCandlesCard({
   onIntervalToggle,
 }: ISymbolRsiCandlesCardProps) {
   const sortedintervalRsiCandles = intervalRsiCandles.sort(
-    (a, b) => Interval[a.interval] - Interval[b.interval],
+    (a, b) => IntervalObj[a.interval] - IntervalObj[b.interval],
   );
 
   return (

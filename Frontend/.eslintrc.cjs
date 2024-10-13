@@ -8,6 +8,9 @@ module.exports = {
   ],
   ignorePatterns: ["dist", ".eslintrc.cjs"],
   parser: "@typescript-eslint/parser",
+  parserOptions: {
+    project: ["tsconfig.json"],
+  },
   plugins: ["react-refresh"],
   rules: {
     "react-refresh/only-export-components": [
@@ -15,5 +18,6 @@ module.exports = {
       { allowConstantExport: true },
     ],
     "no-irregular-whitespace": ["error", { skipComments: true }],
+    "@typescript-eslint/no-unnecessary-condition": "error",
   },
 };

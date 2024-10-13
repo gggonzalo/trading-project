@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 
 public class CandlesHub(ClientsStreamingService clientsStreamingService) : Hub
 {
-    public async Task SubscribeToCandleUpdatesAsync(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals)
+    public async Task SubscribeToCandleUpdates(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals)
     {
         var clientConnectionId = Context.ConnectionId;
 
