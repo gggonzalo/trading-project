@@ -3,18 +3,18 @@ using Microsoft.AspNetCore.SignalR;
 
 public class CandlesHub(ClientsStreamingService clientsStreamingService) : Hub
 {
-    public async Task SubscribeToCandleUpdates(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals)
+    public async Task SubscribeToCandleUpdatesAsync(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals)
     {
         var clientConnectionId = Context.ConnectionId;
 
-        await clientsStreamingService.StartCandlesStream(clientConnectionId, symbols, intervals);
+        await clientsStreamingService.StartCandleUpdatesStreamAsync(clientConnectionId, symbols, intervals);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var clientConnectionId = Context.ConnectionId;
 
-        await clientsStreamingService.StopCandlesStream(clientConnectionId);
+        await clientsStreamingService.StopCandleUpdatesStreamAsync(clientConnectionId);
 
         await base.OnDisconnectedAsync(exception);
     }

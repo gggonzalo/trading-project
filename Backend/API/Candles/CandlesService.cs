@@ -2,18 +2,19 @@ using Binance.Net.Enums;
 using Binance.Net.Interfaces.Clients;
 using CryptoExchange.Net.Objects.Sockets;
 
+// TODO: Extract to interface so we can have data from different sources
 public class CandlesService(IBinanceRestClient binanceRestClient, IBinanceSocketClient binanceSocketClient)
 {
     // TODO: Implement same methods for spot
 
-    public async Task<IEnumerable<Candle>> GetCandlesAsync(string symbol, KlineInterval interval)
+    public async Task<IEnumerable<Candle>> GetCandlesAsync(string symbol, KlineInterval interval, DateTime? startTime = null, DateTime? endTime = null, int? limit = 1000)
     {
-        var klinesResult = await binanceRestClient.UsdFuturesApi.ExchangeData.GetKlinesAsync(symbol, interval, limit: 1000);
+        var klinesResult = await binanceRestClient.SpotApi.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit);
         var klines = klinesResult.Data;
 
         return klines.Select(k => new Candle
         {
-            Time = k.OpenTime,
+            Time = Utils.ConvertDateToUnixExpoch(k.OpenTime),
             Open = k.OpenPrice,
             High = k.HighPrice,
             Low = k.LowPrice,
@@ -21,9 +22,9 @@ public class CandlesService(IBinanceRestClient binanceRestClient, IBinanceSocket
         });
     }
 
-    public async Task<UpdateSubscription> SubscribeToCandleUpdates(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals, Action<SymbolIntervalCandle> onCandleUpdate)
+    public async Task<UpdateSubscription> SubscribeToCandleUpdatesAsync(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals, Action<SymbolIntervalCandle> onCandleUpdate)
     {
-        var subscriptionResult = await binanceSocketClient.UsdFuturesApi.SubscribeToKlineUpdatesAsync(
+        var subscriptionResult = await binanceSocketClient.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(
             symbols,
             intervals,
             e =>
@@ -37,7 +38,7 @@ public class CandlesService(IBinanceRestClient binanceRestClient, IBinanceSocket
                     Interval = kline.Interval,
                     Candle = new Candle
                     {
-                        Time = kline.OpenTime,
+                        Time = Utils.ConvertDateToUnixExpoch(kline.OpenTime),
                         Open = kline.OpenPrice,
                         High = kline.HighPrice,
                         Low = kline.LowPrice,
@@ -54,8 +55,8 @@ public class CandlesService(IBinanceRestClient binanceRestClient, IBinanceSocket
         return subscriptionResult.Data;
     }
 
-    public async Task UnsubscribeFromCandleUpdates(UpdateSubscription subscription)
+    public async Task UnsubscribeFromCandleUpdatesAsync(UpdateSubscription subscription)
     {
-        await binanceSocketClient.UsdFuturesApi.UnsubscribeAsync(subscription);
+        await binanceSocketClient.SpotApi.UnsubscribeAsync(subscription);
     }
 }

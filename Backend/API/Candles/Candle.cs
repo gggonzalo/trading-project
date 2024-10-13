@@ -1,6 +1,6 @@
 public record Candle
 {
-    public required DateTime Time { get; init; }
+    public required double Time { get; init; }
     public required decimal Open { get; init; }
     public required decimal High { get; init; }
     public required decimal Low { get; init; }

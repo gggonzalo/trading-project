@@ -1,10 +1,11 @@
 using RestSharp;
 
+// REST API reference => https://documentation.onesignal.com/reference/rest-api-overview
 public class OneSignalService(IConfiguration configuration) : IPushNotificationsService
 {
     private readonly IConfiguration _configuration = configuration;
 
-    public async Task SendNotification(string message)
+    public async Task SendNotificationAsync(string message)
     {
         var clientOptions = new RestClientOptions
         {
@@ -21,7 +22,6 @@ public class OneSignalService(IConfiguration configuration) : IPushNotifications
         {
             app_id = _configuration["OneSignal:AppId"],
             contents = new { en = message },
-            included_segments = new[] { "Total Subscriptions" }
         };
 
         request.AddJsonBody(notification);

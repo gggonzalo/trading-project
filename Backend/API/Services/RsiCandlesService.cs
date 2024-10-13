@@ -9,7 +9,7 @@ public class RsiCandlesService(CandlesService candlesService)
     // {
     // }
 
-    public async Task<UpdateSubscription> SubscribeToCandleUpdates(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals, Action<SymbolIntervalRsiCandle> onCandleUpdate)
+    public async Task<UpdateSubscription> SubscribeToCandleUpdatesAsync(IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals, Action<SymbolIntervalRsiCandle> onCandleUpdate)
     {
         // Create a RsiSeries for each symbol and interval
         var symbolIntervalRsiSeries = new Dictionary<string, Dictionary<KlineInterval, RsiSeries>>();
@@ -32,7 +32,7 @@ public class RsiCandlesService(CandlesService candlesService)
 
         await Task.WhenAll(candlesTasks);
 
-        var subscription = await candlesService.SubscribeToCandleUpdates(
+        var subscription = await candlesService.SubscribeToCandleUpdatesAsync(
             symbols,
             intervals,
             c =>
@@ -60,6 +60,6 @@ public class RsiCandlesService(CandlesService candlesService)
 
     public async Task UnsubscribeFromCandleUpdates(UpdateSubscription subscription)
     {
-        await candlesService.UnsubscribeFromCandleUpdates(subscription);
+        await candlesService.UnsubscribeFromCandleUpdatesAsync(subscription);
     }
 }

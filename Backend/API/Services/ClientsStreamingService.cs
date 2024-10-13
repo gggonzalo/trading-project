@@ -6,9 +6,9 @@ public class ClientsStreamingService(IHubContext<CandlesHub> candlesHubContext, 
 {
     private Dictionary<string, UpdateSubscription> _clientsSubscriptions = [];
 
-    public async Task StartCandlesStream(string clientConnectionId, IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals)
+    public async Task StartCandleUpdatesStreamAsync(string clientConnectionId, IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals)
     {
-        var subscription = await candlesService.SubscribeToCandleUpdates(symbols, intervals, c =>
+        var subscription = await candlesService.SubscribeToCandleUpdatesAsync(symbols, intervals, c =>
         {
             candlesHubContext.Clients.Client(clientConnectionId).SendAsync("CandleUpdate", new
             {
@@ -16,7 +16,7 @@ public class ClientsStreamingService(IHubContext<CandlesHub> candlesHubContext, 
                 c.Interval,
                 Candle = new
                 {
-                    Time = Utils.ToJavascriptSecs(c.Candle.Time),
+                    c.Candle.Time,
                     c.Candle.Open,
                     c.Candle.High,
                     c.Candle.Low,
@@ -28,11 +28,11 @@ public class ClientsStreamingService(IHubContext<CandlesHub> candlesHubContext, 
         _clientsSubscriptions[clientConnectionId] = subscription;
     }
 
-    public async Task StopCandlesStream(string clientConnectionId)
+    public async Task StopCandleUpdatesStreamAsync(string clientConnectionId)
     {
         if (_clientsSubscriptions.TryGetValue(clientConnectionId, out var subscription))
         {
-            await candlesService.UnsubscribeFromCandleUpdates(subscription);
+            await candlesService.UnsubscribeFromCandleUpdatesAsync(subscription);
 
             _clientsSubscriptions.Remove(clientConnectionId);
         }
@@ -40,7 +40,7 @@ public class ClientsStreamingService(IHubContext<CandlesHub> candlesHubContext, 
 
     public async Task StartRsiCandlesStream(string clientConnectionId, IEnumerable<string> symbols, IEnumerable<KlineInterval> intervals)
     {
-        var subscription = await rsiCandlesService.SubscribeToCandleUpdates(symbols, intervals, c =>
+        var subscription = await rsiCandlesService.SubscribeToCandleUpdatesAsync(symbols, intervals, c =>
         {
             rsiCandlesHubContext.Clients.Client(clientConnectionId).SendAsync("RsiCandleUpdate", new
             {
@@ -48,7 +48,7 @@ public class ClientsStreamingService(IHubContext<CandlesHub> candlesHubContext, 
                 c.Interval,
                 Candle = c.Candle != null ? new
                 {
-                    Time = Utils.ToJavascriptSecs(c.Candle.Time),
+                    c.Candle.Time,
                     c.Candle.High,
                     c.Candle.Low,
                     c.Candle.Close,

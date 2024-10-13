@@ -6,7 +6,7 @@ using NanoidDotNet;
 using Polly;
 using Quartz;
 
-public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbContext appDbContext, BinanceUtilities binanceUtilities) : IJob
+public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbContext appDbContext, BinanceUtils binanceUtilities) : IJob
 {
     private readonly AppDbContext _appDbContext = appDbContext;
 
@@ -22,7 +22,7 @@ public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbConte
             return;
         }
 
-        var openOrdersResult = await binanceRestClient.UsdFuturesApi.Trading.GetOpenOrdersAsync();
+        var openOrdersResult = await binanceRestClient.SpotApi.Trading.GetOpenOrdersAsync();
         var openTargetRsiOrders = openOrdersResult.Data.Where(o => o.ClientOrderId.StartsWith("TROI_"));
 
         foreach (var instruction in targetRsiOrderInstructionsToCheck)
@@ -51,15 +51,15 @@ public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbConte
                 if (instructedOrder.Status == OrderStatus.New)
                 {
                     // TODO: Handle CancelReplaceMode (Spot) and cancel/place errors (Futures)
-                    await binanceRestClient.UsdFuturesApi.Trading.CancelOrderAsync(instructedOrder.Symbol, origClientOrderId: instructedOrder.ClientOrderId);
+                    await binanceRestClient.SpotApi.Trading.CancelOrderAsync(instructedOrder.Symbol, origClientOrderId: instructedOrder.ClientOrderId);
 
                     await binanceRestClient.UsdFuturesApi.Account.ChangeMarginTypeAsync(instruction.Symbol, FuturesMarginType.Isolated);
                     await binanceRestClient.UsdFuturesApi.Account.ChangeInitialLeverageAsync(instruction.Symbol, 1);
 
-                    await binanceRestClient.UsdFuturesApi.Trading.PlaceOrderAsync(
+                    await binanceRestClient.SpotApi.Trading.PlaceOrderAsync(
                         instructedOrder.Symbol,
                         instructedOrder.Side,
-                        FuturesOrderType.Limit,
+                        SpotOrderType.Limit,
                         quantity: baseAssetQuantityFromTargetPrice,
                         price: priceForTargetRsi,
                         timeInForce: TimeInForce.GoodTillCanceled,

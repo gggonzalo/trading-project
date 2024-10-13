@@ -4,16 +4,15 @@ using Binance.Net.Objects.Models.Spot.Socket;
 using CryptoExchange.Net.Objects.Sockets;
 using NanoidDotNet;
 
+
 public class OrdersMonitorService(IBinanceSocketClient socketClient)
 {
-    private readonly IBinanceSocketClient _socketClient = socketClient;
-
     public async Task StartMonitoring()
     {
-        var listenKeyResponse = await _socketClient.SpotApi.Account.StartUserStreamAsync();
+        var listenKeyResponse = await socketClient.SpotApi.Account.StartUserStreamAsync();
         var listenKey = listenKeyResponse.Data.Result;
 
-        await _socketClient.SpotApi.Account.SubscribeToUserDataUpdatesAsync(listenKey, HandleOrderUpdate);
+        await socketClient.SpotApi.Account.SubscribeToUserDataUpdatesAsync(listenKey, HandleOrderUpdate);
 
         // The listen key will stay valid for 60 minutes, after this no updates will be send anymore. To extend the life time of the listen key it is recommended to call the KeepAliveUserStreamAsync method every 30 minutes
         _ = Task.Run(async () =>
@@ -22,7 +21,7 @@ public class OrdersMonitorService(IBinanceSocketClient socketClient)
             {
                 await Task.Delay(TimeSpan.FromMinutes(30));
 
-                await _socketClient.SpotApi.Account.KeepAliveUserStreamAsync(listenKey);
+                await socketClient.SpotApi.Account.KeepAliveUserStreamAsync(listenKey);
             }
         });
     }
@@ -37,7 +36,7 @@ public class OrdersMonitorService(IBinanceSocketClient socketClient)
             var profitOrderSide = orderUpdate.Side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy;
             var profitOrderPrice = orderUpdate.Price * (profitOrderSide == OrderSide.Sell ? 1.0075m : 0.9925m);
 
-            _socketClient.SpotApi.Trading.PlaceOrderAsync(
+            socketClient.SpotApi.Trading.PlaceOrderAsync(
                 orderUpdate.Symbol,
                 profitOrderSide,
                 SpotOrderType.Limit,
