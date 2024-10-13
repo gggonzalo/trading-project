@@ -5,6 +5,7 @@ import { convertCandleEpochToLocal, convertLocalEpochToUtcDate } from "@/utils";
 import {
   ColorType,
   CrosshairMode,
+  IChartApi,
   LogicalRange,
   LogicalRangeChangeEventHandler,
   Time,
@@ -16,13 +17,15 @@ const CANDLES_REQUEST_LIMIT = 500;
 
 function SymbolCandleStickChart() {
   // Store
-  const symbol = useAppStore((state) => state.symbol);
+  const symbolInfo = useAppStore((state) => state.symbolInfo);
+  const symbolInfoStatus = useAppStore((state) => state.symbolInfoStatus);
   const interval = useAppStore((state) => state.interval);
 
   const [isLoadingInitialCandles, setIsLoadingInitialCandles] = useState(false);
 
   // Refs
   const chartContainer = useRef<HTMLDivElement>(null);
+  const chartApi = useRef<IChartApi | null>(null);
   const lastHistoricalDataEndTimeRequested = useRef<number | null>(null);
 
   // Effects
@@ -48,6 +51,7 @@ function SymbolCandleStickChart() {
         timeVisible: interval.includes("Minute") || interval.includes("Hour"),
       },
     });
+    chartApi.current = chart;
 
     const series = chart.addCandlestickSeries({
       upColor: "#26a69a",
@@ -57,22 +61,11 @@ function SymbolCandleStickChart() {
       wickDownColor: "#ef5350",
     });
 
-    if (!symbol) {
-      chart.applyOptions({
-        watermark: {
-          visible: true,
-          fontSize: 24,
-          horzAlign: "center",
-          vertAlign: "center",
-          color: "rgba(115, 115, 115)",
-          text: "Select a symbol",
-        },
-      });
-
+    if (!symbolInfo?.symbol)
       return () => {
         chart.remove();
+        chartApi.current = null;
       };
-    }
 
     const dataUpdatesController = new AbortController();
 
@@ -84,7 +77,7 @@ function SymbolCandleStickChart() {
       setIsLoadingInitialCandles(true);
 
       const initialCandlesResponse = await fetch(
-        `http://localhost:5215/candles?symbol=${symbol}&interval=${interval}&limit=${CANDLES_REQUEST_LIMIT}`,
+        `http://localhost:5215/candles?symbol=${symbolInfo.symbol}&interval=${interval}&limit=${CANDLES_REQUEST_LIMIT}`,
       );
       const initialCandles = await initialCandlesResponse.json();
 
@@ -106,7 +99,7 @@ function SymbolCandleStickChart() {
 
       // Candle updates
       candleUpdatesSubscription = CandlesStreamingService.subscribe(
-        symbol,
+        symbolInfo.symbol,
         interval,
         (candle) => {
           const chartCandle = {
@@ -143,7 +136,7 @@ function SymbolCandleStickChart() {
           lastHistoricalDataEndTimeRequested.current = newHistoricalDataEndTime;
 
           const historicalDataResponse = await fetch(
-            `http://localhost:5215/candles?symbol=${symbol}&interval=${interval}&endTime=${convertLocalEpochToUtcDate(newHistoricalDataEndTime).toISOString()}&limit=${CANDLES_REQUEST_LIMIT}`,
+            `http://localhost:5215/candles?symbol=${symbolInfo.symbol}&interval=${interval}&endTime=${convertLocalEpochToUtcDate(newHistoricalDataEndTime).toISOString()}&limit=${CANDLES_REQUEST_LIMIT}`,
           );
           const historicalData = await historicalDataResponse.json();
 
@@ -171,6 +164,7 @@ function SymbolCandleStickChart() {
     return () => {
       dataUpdatesController.abort();
       chart.remove();
+      chartApi.current = null;
 
       // Initial candles cleanup
       setIsLoadingInitialCandles(false);
@@ -184,35 +178,63 @@ function SymbolCandleStickChart() {
           .timeScale()
           .unsubscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
     };
-  }, [symbol, interval]);
+  }, [symbolInfo?.symbol, interval]);
 
-  return (
-    <div className="relative flex size-full items-center justify-center">
-      {isLoadingInitialCandles && (
-        <div className="absolute left-1/2 top-1/2 z-[3] -translate-x-1/2 -translate-y-1/2 transform">
-          <svg
-            className="size-6 animate-spin text-neutral-500"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-        </div>
-      )}
-      <div ref={chartContainer} className="size-full"></div>
-    </div>
-  );
+  // Watermark
+  useEffect(() => {
+    if (symbolInfoStatus === "loading") {
+      chartApi.current?.applyOptions({
+        watermark: {
+          visible: true,
+          fontSize: 24,
+          horzAlign: "center",
+          vertAlign: "center",
+          color: "rgba(115, 115, 115)",
+          text: "Loading symbol info...",
+        },
+      });
+
+      return;
+    }
+
+    if (!symbolInfo?.symbol) {
+      chartApi.current?.applyOptions({
+        watermark: {
+          visible: true,
+          fontSize: 24,
+          horzAlign: "center",
+          vertAlign: "center",
+          color: "rgba(115, 115, 115)",
+          text: "Select a symbol",
+        },
+      });
+
+      return;
+    }
+
+    if (isLoadingInitialCandles) {
+      chartApi.current?.applyOptions({
+        watermark: {
+          visible: true,
+          fontSize: 24,
+          horzAlign: "center",
+          vertAlign: "center",
+          color: "rgba(115, 115, 115)",
+          text: "Loading historical data...",
+        },
+      });
+
+      return;
+    }
+
+    chartApi.current?.applyOptions({
+      watermark: {
+        visible: false,
+      },
+    });
+  }, [isLoadingInitialCandles, symbolInfo?.symbol, symbolInfoStatus]);
+
+  return <div ref={chartContainer} className="size-full"></div>;
 }
 
 export default SymbolCandleStickChart;

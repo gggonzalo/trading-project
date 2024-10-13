@@ -78,6 +78,7 @@ builder.Services.AddSingleton<IPushNotificationsService, OneSignalService>();
 // TODO: Singleton works for now but it will make more sense when reuse streams for multiple clients
 builder.Services.AddSingleton<CandlesService>();
 builder.Services.AddSingleton<PriceService>();
+builder.Services.AddSingleton<SymbolsService>();
 
 builder.Services.AddSingleton<ClientsStreamingService>();
 

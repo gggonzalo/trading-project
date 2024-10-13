@@ -33,5 +33,15 @@ public static class SymbolsModule
             // TODO: Add better mapping and remove unnecessary properties to not send them over the network
             return symbolsWithNumOrders;
         });
+
+
+        app.MapGet("/symbols/{symbol}", async (string symbol, SymbolsService symbolsService) =>
+        {
+            var symbolInfo = await symbolsService.GetSymbolInfoAsync(symbol);
+
+            if (symbolInfo == null) return Results.NotFound();
+
+            return Results.Ok(symbolInfo);
+        });
     }
 }

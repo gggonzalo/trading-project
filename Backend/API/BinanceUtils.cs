@@ -2,21 +2,37 @@ using Binance.Net.Objects.Models.Spot;
 
 public static class BinanceUtils
 {
-    public static int GetSymbolPricePrecision(BinanceSymbol symbolInfo)
+    public static PriceFormat GetSymbolPriceFormat(BinanceSymbol symbolInfo)
     {
-        if (symbolInfo.PriceFilter == null) return 0;
+        if (symbolInfo.PriceFilter == null) return new PriceFormat
+        {
+            MinMove = 1M,
+            Precision = 0
+        };
 
-        var tickSize = symbolInfo.PriceFilter.TickSize.ToString().TrimEnd('0');
+        var minMoveStr = symbolInfo.PriceFilter.TickSize.ToString().TrimEnd('0');
 
-        return tickSize.IndexOf('.') == -1 ? 0 : tickSize.Length - tickSize.IndexOf('.') - 1;
+        return new PriceFormat
+        {
+            MinMove = symbolInfo.PriceFilter.TickSize,
+            Precision = minMoveStr.IndexOf('.') == -1 ? 0 : minMoveStr.Length - minMoveStr.IndexOf('.') - 1
+        };
     }
 
-    public static int GetSymbolQuantityPrecision(BinanceSymbol symbolInfo)
+    public static QuantityFormat GetSymbolQuantityFormat(BinanceSymbol symbolInfo)
     {
-        if (symbolInfo.LotSizeFilter == null) return 0;
+        if (symbolInfo.LotSizeFilter == null) return new QuantityFormat
+        {
+            MinMove = 1M,
+            Precision = 0
+        };
 
-        var stepSize = symbolInfo.LotSizeFilter.StepSize.ToString().TrimEnd('0');
+        var minMoveStr = symbolInfo.LotSizeFilter.StepSize.ToString().TrimEnd('0');
 
-        return stepSize.IndexOf('.') == -1 ? 0 : stepSize.Length - stepSize.IndexOf('.') - 1;
+        return new QuantityFormat
+        {
+            MinMove = symbolInfo.LotSizeFilter.StepSize,
+            Precision = minMoveStr.IndexOf('.') == -1 ? 0 : minMoveStr.Length - minMoveStr.IndexOf('.') - 1
+        };
     }
 }

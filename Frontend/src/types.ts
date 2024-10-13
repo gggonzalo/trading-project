@@ -7,6 +7,14 @@ export interface SymbolDetails {
   orderInstructionsCount: number;
 }
 
+export interface SymbolInfo {
+  symbol: string;
+  baseAsset: string;
+  quoteAsset: string;
+  pricePrecision: number;
+  quantityPrecision: number;
+}
+
 export type Interval =
   | "OneMinute"
   | "FiveMinutes"

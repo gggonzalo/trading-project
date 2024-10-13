@@ -56,7 +56,7 @@ type PriceAlertFormProps = {
 
 function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
   // Store
-  const symbol = useAppStore((state) => state.symbol);
+  const symbolInfo = useAppStore((state) => state.symbolInfo);
   const interval = useAppStore((state) => state.interval);
 
   // State
@@ -82,7 +82,7 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        symbol,
+        symbol: symbolInfo,
         valueTarget: Number(valueTarget),
         subscriptionId: OneSignal.User.PushSubscription.id,
       }),
@@ -106,10 +106,10 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
 
   // Effects
   useEffect(() => {
-    if (!symbol) return;
+    if (!symbolInfo?.symbol) return;
 
     const candleUpdatesSubscription = CandlesStreamingService.subscribe(
-      symbol,
+      symbolInfo.symbol,
       interval,
       (candle) => setCurrentPrice(candle.close),
     );
@@ -119,10 +119,10 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
 
       setCurrentPrice(null);
     };
-  }, [interval, symbol]);
+  }, [interval, symbolInfo?.symbol]);
 
   const renderHelperText = () => {
-    if (!symbol) return;
+    if (!symbolInfo?.symbol) return;
 
     const priceAsNumber = Number(price);
 
@@ -133,7 +133,8 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
     return (
       <div className="mt-6 flex flex-col gap-3">
         <p className="text-center text-xs text-muted-foreground">
-          Creating {isAlertBullish ? "bullish" : "bearish"} alert for {symbol}:
+          Creating {isAlertBullish ? "bullish" : "bearish"} alert for{" "}
+          {symbolInfo.symbol}:
         </p>
         <div className="grid grid-cols-3">
           <span className="justify-self-end text-sm font-semibold">
@@ -185,7 +186,7 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
             >
               <ArrowLeft className="size-4" />
             </Button>
-            <Button type="submit" disabled={!symbol}>
+            <Button type="submit" disabled={!symbolInfo}>
               Create alert
             </Button>
           </CardFooter>

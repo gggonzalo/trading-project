@@ -52,7 +52,6 @@ import { useCallback, useEffect, useState } from "react";
 
 function Dashboard() {
   // Store
-  const symbol = useAppStore((state) => state.symbol);
   const interval = useAppStore((state) => state.interval);
   const activeUserPanel = useAppStore((state) => state.activeUserPanel);
   const pushNotificationsStatus = useAppStore(
@@ -60,9 +59,56 @@ function Dashboard() {
   );
 
   // State
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("");
+  const [symbolChangeAbortController, setSymbolChangeAbortController] =
+    useState<AbortController | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   const { width } = useViewportSize();
+
+  const handleSymbolChange = async (newSymbol: string) => {
+    // Abort the previous request if it exists
+    if (symbolChangeAbortController) {
+      symbolChangeAbortController.abort();
+    }
+
+    const newAbortController = new AbortController();
+    setSymbolChangeAbortController(newAbortController);
+
+    setSelectedSymbol(newSymbol);
+    useAppStore.setState({ symbolInfo: null, symbolInfoStatus: "loading" });
+
+    if (!newSymbol) {
+      useAppStore.setState({ symbolInfoStatus: "unloaded" });
+
+      return;
+    }
+
+    try {
+      const newSymbolInfoResponse = await fetch(
+        `http://localhost:5215/symbols/${newSymbol}`,
+        {
+          signal: newAbortController.signal,
+        },
+      );
+
+      if (!newSymbolInfoResponse.ok) throw new Error("Symbol info not found");
+
+      const newSymbolInfo = await newSymbolInfoResponse.json();
+
+      useAppStore.setState({
+        symbolInfo: newSymbolInfo,
+        symbolInfoStatus: "loaded",
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e.name === "AbortError") return;
+
+        setSelectedSymbol("");
+        useAppStore.setState({ symbolInfoStatus: "unloaded" });
+      }
+    }
+  };
 
   const fetchUserAlerts = useCallback(() => {
     if (pushNotificationsStatus === "unloaded") return;
@@ -82,12 +128,10 @@ function Dashboard() {
 
   const renderSymbolIntervalControls = () => {
     return (
-      <>
+      <div className="flex gap-1">
         <SymbolsCombobox
-          value={symbol}
-          onValueChange={(newSymbol) =>
-            useAppStore.setState({ symbol: newSymbol })
-          }
+          value={selectedSymbol}
+          onValueChange={handleSymbolChange}
         />
         <Select
           value={interval}
@@ -125,7 +169,23 @@ function Dashboard() {
             </SelectItem>
           </SelectContent>
         </Select>
-      </>
+        {width < 768 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button className="ml-auto">
+                <BellRing className="size-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              collisionPadding={{
+                right: 16,
+              }}
+            >
+              {renderUserPanel()}
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
     );
   };
 
@@ -202,15 +262,15 @@ function Dashboard() {
         <div className="h-[24rem]">
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel
-              className="relative flex flex-col gap-1 p-3"
+              className="flex flex-col gap-2 p-3"
               defaultSize={60}
               minSize={50}
               maxSize={70}
             >
-              <div className="flex gap-1">{renderSymbolIntervalControls()}</div>
+              {renderSymbolIntervalControls()}
               <SymbolCandleStickChart />
             </ResizablePanel>
-            <ResizableHandle />
+            <ResizableHandle withHandle />
             <ResizablePanel>
               <div className="flex size-full items-center justify-center p-3">
                 {renderUserPanel()}
@@ -223,23 +283,7 @@ function Dashboard() {
 
     return (
       <div className="flex h-[28rem] flex-col gap-2">
-        <div className="flex gap-1">
-          {renderSymbolIntervalControls()}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button className="ml-auto">
-                <BellRing className="size-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              collisionPadding={{
-                right: 16,
-              }}
-            >
-              {renderUserPanel()}
-            </PopoverContent>
-          </Popover>
-        </div>
+        {renderSymbolIntervalControls()}
         <SymbolCandleStickChart />
       </div>
     );
