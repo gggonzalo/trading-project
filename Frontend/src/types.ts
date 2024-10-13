@@ -7,12 +7,22 @@ export interface SymbolDetails {
   orderInstructionsCount: number;
 }
 
+export interface PriceFormat {
+  minMove: number;
+  precision: number;
+}
+
+export interface QuantityFormat {
+  minMove: number;
+  precision: number;
+}
+
 export interface SymbolInfo {
   symbol: string;
   baseAsset: string;
   quoteAsset: string;
-  pricePrecision: number;
-  quantityPrecision: number;
+  priceFormat: PriceFormat;
+  quantityFormat: QuantityFormat;
 }
 
 export type Interval =

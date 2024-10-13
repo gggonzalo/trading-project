@@ -61,11 +61,19 @@ function SymbolCandleStickChart() {
       wickDownColor: "#ef5350",
     });
 
-    if (!symbolInfo?.symbol)
+    if (!symbolInfo)
       return () => {
         chart.remove();
         chartApi.current = null;
       };
+
+    series.applyOptions({
+      priceFormat: {
+        type: "price",
+        precision: symbolInfo.priceFormat.precision,
+        minMove: symbolInfo.priceFormat.minMove,
+      },
+    });
 
     const dataUpdatesController = new AbortController();
 
@@ -178,7 +186,7 @@ function SymbolCandleStickChart() {
           .timeScale()
           .unsubscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
     };
-  }, [symbolInfo?.symbol, interval]);
+  }, [symbolInfo, interval]);
 
   // Watermark
   useEffect(() => {
