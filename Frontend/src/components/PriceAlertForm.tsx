@@ -132,7 +132,7 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
 
     return (
       <div className="mt-6 flex flex-col gap-3">
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="min-w-[190px] text-center text-xs text-muted-foreground">
           Creating {isAlertBullish ? "bullish" : "bearish"} alert for{" "}
           {symbolInfo.symbol}:
         </p>

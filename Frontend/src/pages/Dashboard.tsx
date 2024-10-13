@@ -262,7 +262,7 @@ function Dashboard() {
         <div className="h-[24rem]">
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel
-              className="flex flex-col gap-2 p-3"
+              className="flex flex-col gap-2 p-1"
               defaultSize={60}
               minSize={50}
               maxSize={70}
@@ -270,9 +270,9 @@ function Dashboard() {
               {renderSymbolIntervalControls()}
               <SymbolCandleStickChart />
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle className="mx-10 my-6" withHandle />
             <ResizablePanel>
-              <div className="flex size-full items-center justify-center p-3">
+              <div className="flex size-full items-center justify-center p-1">
                 {renderUserPanel()}
               </div>
             </ResizablePanel>
@@ -291,7 +291,7 @@ function Dashboard() {
 
   return (
     <div className="container mx-auto">
-      <div className="flex flex-col rounded md:border">
+      <div className="flex flex-col rounded">
         {renderTradingContent()}
         <Tabs defaultValue="alerts">
           <TabsList className="w-full">
