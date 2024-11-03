@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using CryptoExchange.Net.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,27 +52,12 @@ builder.Services.AddSignalR()
         options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-builder.Services.AddQuartz(q =>
-{
-    // q.AddJob<TargetRsiOrdersJob>(j => j.WithIdentity("RsiOrdersJob"));
-
-    // q.AddTrigger(t => t
-    //     .ForJob("RsiOrdersJob")
-    //     .WithCronSchedule("0 * * ? * *"));
-
-
-    // q.AddJob<AlertsMonitoringJob>(j => j.WithIdentity("AlertsMonitoringJob"));
-
-    // // TODO: Add a job for each interval. Try to pass the interval as a parameter to the job
-    // q.AddTrigger(t => t
-    //     .ForJob("AlertsMonitoringJob")
-    //     .WithCronSchedule("0 * * ? * *"));
-});
-builder.Services.AddQuartzHostedService();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddSingleton<IPushNotificationsService, OneSignalService>();
+
+builder.Services.AddTransient<IUserAlertsStreamFactory, UserAlertsStreamFactory>();
 
 // TODO: Singleton works for now but it will make more sense when reuse streams for multiple clients
 builder.Services.AddSingleton<CandlesService>();
@@ -91,7 +75,6 @@ app.AddCandlesEndpoints();
 app.AddSymbolsEndpoints();
 
 app.Run();
-
 
 #region Unused code
 // builder.Services.AddSingleton<RsiCandlesService>();

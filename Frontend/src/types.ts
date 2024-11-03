@@ -70,11 +70,14 @@ export enum OrderSide {
   Sell = "Sell",
 }
 
+export type TriggerType = "OnlyOnce" | "OncePerMinute";
+
 export interface Alert {
   id: string;
   symbol: string;
   valueOnCreation: number;
   valueTarget: number;
+  trigger: TriggerType;
   createdAt: string;
 }
 

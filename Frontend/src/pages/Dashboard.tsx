@@ -113,9 +113,11 @@ function Dashboard() {
   const fetchUserAlerts = useCallback(() => {
     if (pushNotificationsStatus === "unloaded") return;
 
-    fetch(
-      `http://localhost:5215/alerts?subscriptionId=${OneSignal.User.PushSubscription.id}`,
-    )
+    const subscriptionId = OneSignal.User.PushSubscription.id;
+
+    if (!subscriptionId) return;
+
+    fetch(`http://localhost:5215/alerts?subscriptionId=${subscriptionId}`)
       .then((response) => response.json())
       .then((data) => {
         setAlerts(data);
@@ -256,6 +258,7 @@ function Dashboard() {
     }
   };
 
+  // TODO: Use media queries instead to avoid flashing
   const renderTradingContent = () => {
     if (width > 768) {
       return (

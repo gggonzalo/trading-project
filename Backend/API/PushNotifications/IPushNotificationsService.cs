@@ -1,4 +1,4 @@
 public interface IPushNotificationsService
 {
-    Task SendNotificationAsync(string message);
+    Task SendNotificationAsync(Guid subscriptionId, string message);
 }

@@ -20,6 +20,8 @@ public static class AlertsModule
                 Symbol = alert.Symbol,
                 ValueOnCreation = symbolPriceInfo.Price,
                 ValueTarget = alert.ValueTarget,
+                Trigger = alert.Trigger,
+                Status = Status.Active,
                 SubscriptionId = alert.SubscriptionId,
                 CreatedAt = symbolPriceInfo.Timestamp,
             };

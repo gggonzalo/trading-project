@@ -74,6 +74,8 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
   const price = useWatch({ control: form.control, name: "price" });
 
   const onSubmit = (data: FormValues) => {
+    if (!symbolInfo) return;
+
     const { price: valueTarget } = data;
 
     fetch("http://localhost:5215/alerts", {
@@ -82,11 +84,14 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        symbol: symbolInfo,
+        symbol: symbolInfo.symbol,
         valueTarget: Number(valueTarget),
+        // TODO: Add control to select this value
+        trigger: "OnlyOnce",
         subscriptionId: OneSignal.User.PushSubscription.id,
       }),
     })
+      // TODO: Handle the error response
       .then(() => {
         onAlertCreated();
 
@@ -156,7 +161,7 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Price alert</CardTitle>
-        <CardDescription>Create your price alert</CardDescription>
+        <CardDescription>Create a price alert</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

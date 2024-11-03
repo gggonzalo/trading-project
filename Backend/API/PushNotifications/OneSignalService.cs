@@ -5,7 +5,7 @@ public class OneSignalService(IConfiguration configuration) : IPushNotifications
 {
     private readonly IConfiguration _configuration = configuration;
 
-    public async Task SendNotificationAsync(string message)
+    public async Task SendNotificationAsync(Guid subscriptionId, string message)
     {
         var clientOptions = new RestClientOptions
         {
@@ -22,6 +22,7 @@ public class OneSignalService(IConfiguration configuration) : IPushNotifications
         {
             app_id = _configuration["OneSignal:AppId"],
             contents = new { en = message },
+            include_subscription_ids = new[] { subscriptionId }
         };
 
         request.AddJsonBody(notification);

@@ -1,0 +1,22 @@
+PushNotificationService ✓
+CandlesService ✓
+
+Phase 1
+Chart symbol candles ✓
+
+- Historic data
+- New candles
+
+Create symbol price alerts
+
+- Create PriceAlert model
+
+Phase 2
+
+Subscribe to candles service to listen for new candle and send replacement orders
+
+- Use subscription code from orders monitor service. And
+- Remove closed klines until now method
+
+
+dotnet ef database update 0 && dotnet ef migrations remove && dotnet ef migrations add Initial && dotnet ef database update
