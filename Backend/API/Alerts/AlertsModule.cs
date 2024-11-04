@@ -11,7 +11,7 @@ public static class AlertsModule
             return userAlerts;
         });
 
-        app.MapPost("/alerts", async (CreateAlertDto alert, AppDbContext dbContext, PriceService priceService) =>
+        app.MapPost("/alerts", async (CreateAlertDto alert, AppDbContext dbContext, IAlertsActivator alertsActivator, PriceService priceService) =>
         {
             var symbolPriceInfo = await priceService.GetPriceAsync(alert.Symbol);
 
@@ -21,13 +21,15 @@ public static class AlertsModule
                 ValueOnCreation = symbolPriceInfo.Price,
                 ValueTarget = alert.ValueTarget,
                 Trigger = alert.Trigger,
-                Status = Status.Active,
+                Status = AlertStatus.Active,
                 SubscriptionId = alert.SubscriptionId,
                 CreatedAt = symbolPriceInfo.Timestamp,
             };
 
             dbContext.Alerts.Add(newAlert);
             await dbContext.SaveChangesAsync();
+
+            alertsActivator.Activate([newAlert]);
 
             return Results.Ok();
         });

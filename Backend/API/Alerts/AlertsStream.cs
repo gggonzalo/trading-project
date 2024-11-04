@@ -1,17 +1,16 @@
 using Binance.Net.Enums;
 using CryptoExchange.Net.Objects.Sockets;
 
-public class UserAlertsStream(
-    List<Alert> alerts,
+public class AlertsStream(
     IPushNotificationsService pushNotificationsService,
     AppDbContext dbContext,
     CandlesService candlesService
 )
 {
-    private List<Alert> _alerts = alerts;
+    private readonly List<Alert> _alerts = [];
     private UpdateSubscription? _candlesSubscription = null;
 
-    public void AddOrUpdateAlert(Alert alert)
+    public void AddOrUpdateAlerts(Alert alert)
     {
         var existingAlert = _alerts.FirstOrDefault(a => a.Id == alert.Id);
 
@@ -32,9 +31,9 @@ public class UserAlertsStream(
         if (alert != null)
         {
             _alerts.Remove(alert);
-
-            UpdateStream();
         }
+
+        UpdateStream();
     }
 
     private async void UpdateStream()
@@ -44,7 +43,7 @@ public class UserAlertsStream(
 
 
         // Open a new stream with updated symbols if there are active alerts
-        if (_alerts.Any())
+        if (_alerts.Count != 0)
         {
             var alertsSymbols = _alerts.Select(a => a.Symbol).Distinct().ToList();
 
@@ -70,7 +69,7 @@ public class UserAlertsStream(
             {
                 await pushNotificationsService.SendNotificationAsync(alert.SubscriptionId, $"{alert.Symbol} price dropped to {alert.ValueTarget}!");
 
-                if (alert.Trigger == TriggerType.OnlyOnce)
+                if (alert.Trigger == AlertTrigger.OnlyOnce)
                 {
                     dbContext.Alerts.Remove(alert);
                     await dbContext.SaveChangesAsync();
@@ -81,7 +80,7 @@ public class UserAlertsStream(
             {
                 await pushNotificationsService.SendNotificationAsync(alert.SubscriptionId, $"{alert.Symbol} price rose to {alert.ValueTarget}!");
 
-                if (alert.Trigger == TriggerType.OnlyOnce)
+                if (alert.Trigger == AlertTrigger.OnlyOnce)
                 {
                     dbContext.Alerts.Remove(alert);
                     await dbContext.SaveChangesAsync();

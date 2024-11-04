@@ -1,11 +1,11 @@
 
-public enum TriggerType
+public enum AlertTrigger
 {
     OnlyOnce,
     OncePerMinute,
 }
 
-public enum Status
+public enum AlertStatus
 {
     Active,
     Triggered,
@@ -17,8 +17,8 @@ public record Alert
     public required string Symbol { get; init; }
     public required decimal ValueOnCreation { get; init; }
     public required decimal ValueTarget { get; init; }
-    public required TriggerType Trigger { get; init; }
-    public required Status Status { get; init; }
+    public required AlertTrigger Trigger { get; init; }
+    public required AlertStatus Status { get; init; }
     public required Guid SubscriptionId { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
 }

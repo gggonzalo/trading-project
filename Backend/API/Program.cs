@@ -34,17 +34,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// TODO: Remove credentials if no endpoint is using them
-var configuration = builder.Configuration;
-var binanceApiCredentials = new ApiCredentials(configuration["BinanceApi:Key"], configuration["BinanceApi:Secret"]);
-
-builder.Services.AddBinance(restOptions =>
-{
-    restOptions.ApiCredentials = binanceApiCredentials;
-}, socketOptions =>
-{
-    socketOptions.ApiCredentials = binanceApiCredentials;
-});
+builder.Services.AddBinance();
 
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
@@ -57,7 +47,9 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddSingleton<IPushNotificationsService, OneSignalService>();
 
-builder.Services.AddTransient<IUserAlertsStreamFactory, UserAlertsStreamFactory>();
+builder.Services.AddTransient<IAlertsStreamFactory, AlertsStreamFactory>();
+// TODO: Check if using transient here works
+builder.Services.AddTransient<IAlertsActivator, AlertsActivator>();
 
 // TODO: Singleton works for now but it will make more sense when reuse streams for multiple clients
 builder.Services.AddSingleton<CandlesService>();

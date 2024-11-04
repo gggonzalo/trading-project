@@ -128,6 +128,8 @@ function Dashboard() {
     fetchUserAlerts();
   }, [fetchUserAlerts]);
 
+  if (!width) return;
+
   const renderSymbolIntervalControls = () => {
     return (
       <div className="flex gap-1">
@@ -258,7 +260,6 @@ function Dashboard() {
     }
   };
 
-  // TODO: Use media queries instead to avoid flashing
   const renderTradingContent = () => {
     if (width > 768) {
       return (
@@ -307,6 +308,8 @@ function Dashboard() {
                   <TableHead>Symbol</TableHead>
                   <TableHead>Value On Creation</TableHead>
                   <TableHead>Value Target</TableHead>
+                  <TableHead>Trigger Type</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Creation Time</TableHead>
                 </TableRow>
               </TableHeader>
@@ -332,6 +335,8 @@ function Dashboard() {
                             {alert.valueTarget}
                           </div>
                         </TableCell>
+                        <TableCell>{alert.trigger}</TableCell>
+                        <TableCell>{alert.status}</TableCell>
                         <TableCell>
                           {new Intl.DateTimeFormat("en-US", {
                             dateStyle: "short",

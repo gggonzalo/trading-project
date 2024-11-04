@@ -6,9 +6,9 @@ using NanoidDotNet;
 using Polly;
 using Quartz;
 
-public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbContext appDbContext, BinanceUtils binanceUtilities) : IJob
+public class TargetRsiOrdersJob(IBinanceRestClient binanceRestClient, AppDbContext dbContext, BinanceUtils binanceUtilities) : IJob
 {
-    private readonly AppDbContext _appDbContext = appDbContext;
+    private readonly AppDbContext _appDbContext = dbContext;
 
     public async Task Execute(IJobExecutionContext context)
     {

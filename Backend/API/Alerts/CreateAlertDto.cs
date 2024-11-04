@@ -2,6 +2,6 @@ public record CreateAlertDto
 {
     public required string Symbol { get; init; }
     public required decimal ValueTarget { get; init; }
-    public required TriggerType Trigger { get; init; }
+    public required AlertTrigger Trigger { get; init; }
     public required Guid SubscriptionId { get; init; }
 }
