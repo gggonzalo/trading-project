@@ -1,9 +1,10 @@
 using Binance.Net.Enums;
 using CryptoExchange.Net.Objects.Sockets;
+using Microsoft.EntityFrameworkCore;
 
 public class AlertsStream(
     IPushNotificationsService pushNotificationsService,
-    AppDbContext dbContext,
+    IServiceScopeFactory scopeFactory,
     CandlesService candlesService
 )
 {
@@ -58,9 +59,9 @@ public class AlertsStream(
     private async void OnPriceUpdate(SymbolIntervalCandle symbolIntervalCandle)
     {
         var candle = symbolIntervalCandle.Candle;
-        var alertsForSymbol = _alerts.Where(a => a.Symbol == symbolIntervalCandle.Symbol).ToList();
+        var activeAlertsForSymbol = _alerts.Where(a => a.Symbol == symbolIntervalCandle.Symbol && a.Status == AlertStatus.Active).ToList();
 
-        foreach (var alert in alertsForSymbol)
+        foreach (var alert in activeAlertsForSymbol)
         {
             var isBearishAlert = alert.ValueTarget <= alert.ValueOnCreation;
 
@@ -71,8 +72,14 @@ public class AlertsStream(
 
                 if (alert.Trigger == AlertTrigger.OnlyOnce)
                 {
-                    dbContext.Alerts.Remove(alert);
-                    await dbContext.SaveChangesAsync();
+                    alert.Status = AlertStatus.Triggered;
+
+                    using var scope = scopeFactory.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    await dbContext.Alerts.Where(a => a.Id == alert.Id).ExecuteUpdateAsync(b =>
+                        b.SetProperty(a => a.Status, AlertStatus.Triggered)
+                    );
                 }
             }
             // Bullish alert
@@ -82,11 +89,16 @@ public class AlertsStream(
 
                 if (alert.Trigger == AlertTrigger.OnlyOnce)
                 {
-                    dbContext.Alerts.Remove(alert);
-                    await dbContext.SaveChangesAsync();
+                    alert.Status = AlertStatus.Triggered;
+
+                    using var scope = scopeFactory.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    await dbContext.Alerts.Where(a => a.Id == alert.Id).ExecuteUpdateAsync(b =>
+                        b.SetProperty(a => a.Status, AlertStatus.Triggered)
+                    );
                 }
             }
-
         }
     }
 }

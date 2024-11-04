@@ -2,7 +2,7 @@ public class AlertsActivator(
     IAlertsStreamFactory alertsStreamFactory
 ) : IAlertsActivator
 {
-    private static readonly Dictionary<Guid, AlertsStream> _alertsStreams = [];
+    private readonly Dictionary<Guid, AlertsStream> _alertsStreams = [];
 
     public void Activate(IEnumerable<Alert> alerts)
     {

@@ -48,8 +48,7 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddSingleton<IPushNotificationsService, OneSignalService>();
 
 builder.Services.AddTransient<IAlertsStreamFactory, AlertsStreamFactory>();
-// TODO: Check if using transient here works
-builder.Services.AddTransient<IAlertsActivator, AlertsActivator>();
+builder.Services.AddSingleton<IAlertsActivator, AlertsActivator>();
 
 // TODO: Singleton works for now but it will make more sense when reuse streams for multiple clients
 builder.Services.AddSingleton<CandlesService>();
@@ -65,6 +64,15 @@ app.UseCors();
 app.AddAlertsEndpoints();
 app.AddCandlesEndpoints();
 app.AddSymbolsEndpoints();
+
+// Activate all active alerts
+using var scope = app.Services.CreateScope();
+var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+var alertsActivator = app.Services.GetRequiredService<IAlertsActivator>();
+
+var activeAlerts = await dbContext.Alerts.Where(a => a.Status == AlertStatus.Active).ToListAsync();
+alertsActivator.Activate(activeAlerts);
 
 app.Run();
 

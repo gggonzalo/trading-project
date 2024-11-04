@@ -1,11 +1,11 @@
 public class AlertsStreamFactory(
     IPushNotificationsService pushNotificationsService,
-    AppDbContext dbContext,
+    IServiceScopeFactory scopeFactory,
     CandlesService candlesService
 ) : IAlertsStreamFactory
 {
     public AlertsStream Create(Guid userSubscriptionId)
     {
-        return new AlertsStream(pushNotificationsService, dbContext, candlesService);
+        return new AlertsStream(pushNotificationsService, scopeFactory, candlesService);
     }
 }
