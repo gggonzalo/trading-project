@@ -2,6 +2,7 @@ public class AlertsActivator(
     IAlertsStreamFactory alertsStreamFactory
 ) : IAlertsActivator
 {
+    // Streams grouped by subscription id
     private readonly Dictionary<Guid, AlertsStream> _alertsStreams = [];
 
     public void Activate(IEnumerable<Alert> alerts)

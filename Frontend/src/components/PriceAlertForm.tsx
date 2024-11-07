@@ -73,40 +73,58 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
 
   const price = useWatch({ control: form.control, name: "price" });
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     if (!symbolInfo) return;
 
     const { price: valueTarget } = data;
 
-    fetch("http://localhost:5215/alerts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        symbol: symbolInfo.symbol,
-        valueTarget: Number(valueTarget),
-        // TODO: Add control to select this value
-        trigger: "OnlyOnce",
-        subscriptionId: OneSignal.User.PushSubscription.id,
-      }),
-    })
-      // TODO: Handle the error response
-      .then(() => {
-        onAlertCreated();
+    try {
+      const alertCreationResponse = await fetch(
+        "http://localhost:5215/alerts",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            symbol: symbolInfo.symbol,
+            valueTarget: Number(valueTarget),
+            // TODO: Add control to select this value
+            trigger: "OnlyOnce",
+            subscriptionId: OneSignal.User.PushSubscription.id,
+          }),
+        },
+      );
+
+      // TODO: Improve error handling. Make sure we can parse the response/error
+      if (!alertCreationResponse.ok) {
+        const alertCreationErrorResponse = await alertCreationResponse.json();
 
         toast({
-          title: "Price alert created",
-          description:
-            "You will receive a notification when the price hits the target.",
+          title: "Error",
+          description: alertCreationErrorResponse,
+          variant: "destructive",
         });
 
-        form.reset();
-      })
-      .catch((error) => {
-        console.error(error);
-        // TODO: Handle the error
+        return;
+      }
+
+      onAlertCreated();
+
+      toast({
+        title: "Success",
+        description:
+          "You will receive a notification when the price hits the target.",
       });
+
+      form.reset();
+    } catch {
+      toast({
+        title: "Error",
+        description: "An unknown error occurred while creating the alert.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Effects

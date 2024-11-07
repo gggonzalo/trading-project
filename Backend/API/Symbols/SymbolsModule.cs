@@ -12,6 +12,6 @@ public static class SymbolsModule
             if (symbolInfo == null) return Results.NotFound();
 
             return Results.Ok(symbolInfo);
-        });
+        }).RequireRateLimiting("fixed-medium");
     }
 }

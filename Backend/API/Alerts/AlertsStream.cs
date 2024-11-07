@@ -42,7 +42,6 @@ public class AlertsStream(
         // Close the existing stream if there is one
         _candlesSubscription?.CloseAsync();
 
-
         // Open a new stream with updated symbols if there are active alerts
         if (_alerts.Count != 0)
         {
@@ -83,7 +82,7 @@ public class AlertsStream(
                 }
             }
             // Bullish alert
-            else if (candle.Close >= alert.ValueTarget)
+            else if (!isBearishAlert && candle.Close >= alert.ValueTarget)
             {
                 await pushNotificationsService.SendNotificationAsync(alert.SubscriptionId, $"{alert.Symbol} price rose to {alert.ValueTarget}!");
 

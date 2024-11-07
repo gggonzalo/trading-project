@@ -48,7 +48,9 @@ import {
   TrendingUp,
   XCircle,
 } from "lucide-react";
+import { Trash2 } from "lucide-react"; // Add this import at the top
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 function Dashboard() {
   // Store
@@ -127,6 +129,30 @@ function Dashboard() {
   useEffect(() => {
     fetchUserAlerts();
   }, [fetchUserAlerts]);
+
+  const handleDeleteAlert = async (alertId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5215/alerts/${alertId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error();
+
+      // Refresh alerts list
+      fetchUserAlerts();
+
+      toast({
+        title: "Success",
+        description: "Alert deleted successfully.",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "An unknown error occurred while deleting the alert.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!width) return;
 
@@ -299,7 +325,7 @@ function Dashboard() {
         {renderTradingContent()}
         <Tabs defaultValue="alerts">
           <TabsList className="w-full">
-            <TabsTrigger value="alerts">Alerts</TabsTrigger>
+            <TabsTrigger value="alerts">Price Alerts</TabsTrigger>
           </TabsList>
           <TabsContent value="alerts">
             <Table>
@@ -311,6 +337,7 @@ function Dashboard() {
                   <TableHead>Trigger Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Creation Time</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -342,6 +369,15 @@ function Dashboard() {
                             dateStyle: "short",
                             timeStyle: "medium",
                           }).format(new Date(alert.createdAt))}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteAlert(alert.id)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

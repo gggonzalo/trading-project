@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
-using CryptoExchange.Net.Authentication;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,6 +43,32 @@ builder.Services.AddSignalR()
         options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
+builder.Services.AddRateLimiter(_ =>
+{
+    _.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    _.AddFixedWindowLimiter("fixed-soft", options =>
+    {
+        options.PermitLimit = 5;
+        options.Window = TimeSpan.FromSeconds(10);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
+    _.AddFixedWindowLimiter("fixed-medium", options =>
+    {
+        options.PermitLimit = 4;
+        options.Window = TimeSpan.FromSeconds(10);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
+    _.AddFixedWindowLimiter("fixed-hard", options =>
+    {
+        options.PermitLimit = 3;
+        options.Window = TimeSpan.FromSeconds(10);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+});
+
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
@@ -60,6 +87,7 @@ builder.Services.AddSingleton<ClientsStreamingService>();
 var app = builder.Build();
 
 app.UseCors();
+app.UseRateLimiter();
 
 app.AddAlertsEndpoints();
 app.AddCandlesEndpoints();
@@ -75,87 +103,3 @@ var activeAlerts = await dbContext.Alerts.Where(a => a.Status == AlertStatus.Act
 alertsActivator.Activate(activeAlerts);
 
 app.Run();
-
-#region Unused code
-// builder.Services.AddSingleton<RsiCandlesService>();
-
-// // var ordersMonitorService = app.Services.GetRequiredService<OrdersMonitorService>();
-// // await ordersMonitorService.StartMonitoring();
-
-// app.MapGet("/target-rsi-order-instructions", async (string symbol, AppDbContext dbContext) =>
-// {
-//     var instructions = await dbContext.TargetRsiOrderInstructions.Where(i => i.Symbol == symbol).ToListAsync();
-
-//     return instructions;
-// });
-
-// // TODO: Handle concurrency issues with the job. For now, just check time when creating instructions
-// app.MapPost("/target-rsi-order-instructions", async (CreateTargetRsiOrderInstructionDto targetRsiOrderInstruction, AppDbContext dbContext, IBinanceRestClient binanceRestClient, BinanceUtilities binanceUtilities) =>
-// {
-//     // Creating the instruction
-//     var instruction = new TargetRsiOrderInstruction
-//     {
-//         OrderId = "TROI_" + Nanoid.Generate(size: 30),
-//         Symbol = targetRsiOrderInstruction.Symbol,
-//         Side = targetRsiOrderInstruction.Side,
-//         QuoteQty = targetRsiOrderInstruction.QuoteQty,
-//         Interval = targetRsiOrderInstruction.Interval,
-//         TargetRsi = targetRsiOrderInstruction.TargetRsi,
-//     };
-
-//     dbContext.TargetRsiOrderInstructions.Add(instruction);
-
-//     // Creating the order
-//     // TODO: Move this method to candles service
-//     var closedKlinesUntilNow = await binanceUtilities.GetClosedKlinesUntilNow(
-//         instruction.Symbol,
-//         instruction.Interval,
-//         DateTimeOffset.UtcNow);
-//     var closedClosePrices = closedKlinesUntilNow.Select(k => k.ClosePrice).ToList();
-
-//     var (priceDecimalPlaces, quantityDecimalPlaces) = await binanceUtilities.GetSymbolPriceAndQuantityDecimalPlaces(instruction.Symbol);
-
-//     var priceForTargetRsi = Math.Round(RsiCalculatorService.GetPriceForTargetRsi(closedClosePrices, instruction.TargetRsi), priceDecimalPlaces);
-//     var baseAssetQuantityFromTargetPrice = Math.Round(instruction.QuoteQty / priceForTargetRsi, quantityDecimalPlaces);
-
-//     // TODO: Keep as reference if we need futures in the future, haha
-//     // 'Commiting' both changes
-//     // await binanceRestClient.UsdFuturesApi.Account.ChangeMarginTypeAsync(instruction.Symbol, FuturesMarginType.Isolated);
-//     // await binanceRestClient.UsdFuturesApi.Account.ChangeInitialLeverageAsync(instruction.Symbol, 1);
-
-//     var placedOrderResult = await binanceRestClient.SpotApi.Trading.PlaceOrderAsync(
-//         instruction.Symbol,
-//         instruction.Side,
-//         SpotOrderType.Limit,
-//         quantity: baseAssetQuantityFromTargetPrice,
-//         price: priceForTargetRsi,
-//         timeInForce: TimeInForce.GoodTillCanceled,
-//         newClientOrderId: instruction.OrderId);
-
-//     if (!placedOrderResult.Success) return Results.BadRequest(placedOrderResult.Error);
-
-//     await dbContext.SaveChangesAsync();
-
-//     return Results.Ok();
-// });
-
-// // Add DELETE endpoint to delete target rsi order instruction and cancel it from binance
-// app.MapDelete("/target-rsi-order-instructions/{instructionId}", async (Guid instructionId, string symbol, AppDbContext dbContext, IBinanceRestClient binanceRestClient) =>
-// {
-//     var instruction = await dbContext.TargetRsiOrderInstructions.FindAsync(instructionId);
-
-//     if (instruction == null)
-//     {
-//         return Results.NotFound();
-//     }
-
-//     var cancelOrderResult = await binanceRestClient.SpotApi.Trading.CancelOrderAsync(symbol, origClientOrderId: instruction.OrderId);
-
-//     dbContext.TargetRsiOrderInstructions.Remove(instruction);
-//     await dbContext.SaveChangesAsync();
-
-//     return Results.Ok();
-// });
-
-// app.MapHub<RsiCandlesHub>("/rsi-candles");
-#endregion
