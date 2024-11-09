@@ -132,14 +132,28 @@ function Dashboard() {
 
   const handleDeleteAlert = async (alertId: string) => {
     try {
-      const response = await fetch(`http://localhost:5215/alerts/${alertId}`, {
-        method: "DELETE",
-      });
+      const deleteAlertResponse = await fetch(
+        `http://localhost:5215/alerts/${alertId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
-      if (!response.ok) throw new Error();
+      if (!deleteAlertResponse.ok) {
+        const errorResponse = await deleteAlertResponse.json();
 
-      // Refresh alerts list
-      fetchUserAlerts();
+        toast({
+          title: "Error",
+          description: errorResponse,
+          variant: "destructive",
+        });
+
+        return;
+      }
+
+      setAlerts((currentAlerts) =>
+        currentAlerts.filter((alert) => alert.id !== alertId),
+      );
 
       toast({
         title: "Success",

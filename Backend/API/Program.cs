@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,44 +44,61 @@ builder.Services.AddSignalR()
 
 builder.Services.AddRateLimiter(_ =>
 {
-    _.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    _.AddFixedWindowLimiter("fixed-soft", options =>
+    _.AddPolicy("fixed-soft", context =>
     {
-        options.PermitLimit = 5;
-        options.Window = TimeSpan.FromSeconds(10);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(ipAddress, partition =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromSeconds(10),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
     });
 
-    _.AddFixedWindowLimiter("fixed-medium", options =>
+    _.AddPolicy("fixed-medium", context =>
     {
-        options.PermitLimit = 4;
-        options.Window = TimeSpan.FromSeconds(10);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(ipAddress, partition =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 4,
+                Window = TimeSpan.FromSeconds(10),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
     });
 
-    _.AddFixedWindowLimiter("fixed-hard", options =>
+    _.AddPolicy("fixed-hard", context =>
     {
-        options.PermitLimit = 3;
-        options.Window = TimeSpan.FromSeconds(10);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(ipAddress, partition =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromSeconds(10),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
     });
+
+    _.OnRejected = (context, _) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.WriteAsJsonAsync("Too many requests. Please try again later.");
+
+        return new ValueTask();
+    };
 });
 
-
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-
 builder.Services.AddSingleton<IPushNotificationsService, OneSignalService>();
-
-builder.Services.AddTransient<IAlertsStreamFactory, AlertsStreamFactory>();
+builder.Services.AddSingleton<ClientsStreamingService>();
 builder.Services.AddSingleton<IAlertsActivator, AlertsActivator>();
 
-// TODO: Singleton works for now but it will make more sense when reuse streams for multiple clients
-builder.Services.AddSingleton<CandlesService>();
-builder.Services.AddSingleton<PriceService>();
-builder.Services.AddSingleton<SymbolsService>();
+builder.Services.AddTransient<IAlertsStreamFactory, AlertsStreamFactory>();
+builder.Services.AddTransient<CandlesService>();
+builder.Services.AddTransient<PriceService>();
+builder.Services.AddTransient<SymbolsService>();
 
-builder.Services.AddSingleton<ClientsStreamingService>();
 
 var app = builder.Build();
 

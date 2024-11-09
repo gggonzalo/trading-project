@@ -98,11 +98,11 @@ function PriceAlertForm({ onAlertCreated }: PriceAlertFormProps) {
 
       // TODO: Improve error handling. Make sure we can parse the response/error
       if (!alertCreationResponse.ok) {
-        const alertCreationErrorResponse = await alertCreationResponse.json();
+        const errorResponse = await alertCreationResponse.json();
 
         toast({
           title: "Error",
-          description: alertCreationErrorResponse,
+          description: errorResponse,
           variant: "destructive",
         });
 
