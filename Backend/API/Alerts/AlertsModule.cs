@@ -9,23 +9,30 @@ public static class AlertsModule
             var userAlerts = await dbContext.Alerts.Where(a => a.SubscriptionId == subscriptionId).ToListAsync();
 
             return userAlerts;
-        }).RequireRateLimiting("fixed-hard");
+        });
 
-        app.MapPost("/alerts", async (CreateAlertDto alert, AppDbContext dbContext, IAlertsActivator alertsActivator, PriceService priceService) =>
+        app.MapPost("/alerts", async (CreateAlertDto createAlertDto, AppDbContext dbContext, IPushNotificationsService pushNotificationsService, IAlertsActivator alertsActivator, PriceService priceService) =>
         {
+            var isSubscriptionValid = await pushNotificationsService.IsSubscriptionValidAsync(createAlertDto.SubscriptionId);
+
+            if (!isSubscriptionValid)
+            {
+                return Results.BadRequest("Invalid subscription.");
+            }
+
             var alertsForSymbol = await dbContext.Alerts
-                .Where(a => a.SubscriptionId == alert.SubscriptionId
-                    && a.Symbol == alert.Symbol
+                .Where(a => a.SubscriptionId == createAlertDto.SubscriptionId
+                    && a.Symbol == createAlertDto.Symbol
                     && a.Status == AlertStatus.Active)
                 .CountAsync();
 
             if (alertsForSymbol >= 2)
             {
-                return Results.BadRequest($"Maximum number of active alerts (2) reached for symbol {alert.Symbol}.");
+                return Results.BadRequest($"Maximum number of active alerts (2) reached for symbol {createAlertDto.Symbol}.");
             }
 
             var totalAlerts = await dbContext.Alerts
-                .Where(a => a.SubscriptionId == alert.SubscriptionId
+                .Where(a => a.SubscriptionId == createAlertDto.SubscriptionId
                     && a.Status == AlertStatus.Active)
                 .CountAsync();
 
@@ -34,16 +41,15 @@ public static class AlertsModule
                 return Results.BadRequest("Maximum number of total active alerts (10) reached.");
             }
 
-            var symbolPriceInfo = await priceService.GetPriceAsync(alert.Symbol);
+            var symbolPriceInfo = await priceService.GetPriceAsync(createAlertDto.Symbol);
 
             var newAlert = new Alert
             {
-                Symbol = alert.Symbol,
+                Symbol = createAlertDto.Symbol,
                 ValueOnCreation = symbolPriceInfo.Price,
-                ValueTarget = alert.ValueTarget,
-                Trigger = alert.Trigger,
+                ValueTarget = createAlertDto.ValueTarget,
                 Status = AlertStatus.Active,
-                SubscriptionId = alert.SubscriptionId,
+                SubscriptionId = createAlertDto.SubscriptionId,
                 CreatedAt = symbolPriceInfo.Timestamp,
             };
 
@@ -53,7 +59,7 @@ public static class AlertsModule
             alertsActivator.Activate([newAlert]);
 
             return Results.Ok();
-        }).RequireRateLimiting("fixed-hard");
+        });
 
         app.MapDelete("/alerts/{id}", async (Guid id, AppDbContext dbContext, IAlertsActivator alertsActivator) =>
         {
@@ -70,6 +76,6 @@ public static class AlertsModule
             await dbContext.SaveChangesAsync();
 
             return Results.Ok();
-        }).RequireRateLimiting("fixed-soft");
+        });
     }
 }

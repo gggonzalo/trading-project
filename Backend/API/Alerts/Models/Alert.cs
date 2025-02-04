@@ -1,10 +1,3 @@
-
-public enum AlertTrigger
-{
-    OnlyOnce,
-    OncePerMinute,
-}
-
 public enum AlertStatus
 {
     Active,
@@ -17,7 +10,6 @@ public record Alert
     public required string Symbol { get; init; }
     public required decimal ValueOnCreation { get; init; }
     public required decimal ValueTarget { get; init; }
-    public required AlertTrigger Trigger { get; init; }
     public required AlertStatus Status { get; set; }
     public required Guid SubscriptionId { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }

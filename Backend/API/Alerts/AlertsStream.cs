@@ -55,6 +55,7 @@ public class AlertsStream(
         }
     }
 
+    // TODO: Handle different alert types
     private async void OnPriceUpdate(SymbolIntervalCandle symbolIntervalCandle)
     {
         var candle = symbolIntervalCandle.Candle;
@@ -69,34 +70,29 @@ public class AlertsStream(
             {
                 await pushNotificationsService.SendNotificationAsync(alert.SubscriptionId, $"{alert.Symbol} price dropped to {alert.ValueTarget}!");
 
-                if (alert.Trigger == AlertTrigger.OnlyOnce)
-                {
-                    alert.Status = AlertStatus.Triggered;
+                alert.Status = AlertStatus.Triggered;
 
-                    using var scope = scopeFactory.CreateScope();
-                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                using var scope = scopeFactory.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                    await dbContext.Alerts.Where(a => a.Id == alert.Id).ExecuteUpdateAsync(b =>
-                        b.SetProperty(a => a.Status, AlertStatus.Triggered)
-                    );
-                }
+                await dbContext.Alerts.Where(a => a.Id == alert.Id).ExecuteUpdateAsync(b =>
+                    b.SetProperty(a => a.Status, AlertStatus.Triggered)
+                );
             }
             // Bullish alert
             else if (!isBearishAlert && candle.Close >= alert.ValueTarget)
             {
                 await pushNotificationsService.SendNotificationAsync(alert.SubscriptionId, $"{alert.Symbol} price rose to {alert.ValueTarget}!");
 
-                if (alert.Trigger == AlertTrigger.OnlyOnce)
-                {
-                    alert.Status = AlertStatus.Triggered;
 
-                    using var scope = scopeFactory.CreateScope();
-                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                alert.Status = AlertStatus.Triggered;
 
-                    await dbContext.Alerts.Where(a => a.Id == alert.Id).ExecuteUpdateAsync(b =>
-                        b.SetProperty(a => a.Status, AlertStatus.Triggered)
-                    );
-                }
+                using var scope = scopeFactory.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                await dbContext.Alerts.Where(a => a.Id == alert.Id).ExecuteUpdateAsync(b =>
+                    b.SetProperty(a => a.Status, AlertStatus.Triggered)
+                );
             }
         }
     }

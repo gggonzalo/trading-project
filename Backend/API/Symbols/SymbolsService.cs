@@ -16,8 +16,8 @@ public class SymbolsService(IBinanceRestClient binanceRestClient)
             Symbol = symbolExchangeInfo.Name,
             BaseAsset = symbolExchangeInfo.BaseAsset,
             QuoteAsset = symbolExchangeInfo.QuoteAsset,
-            PriceFormat = BinanceUtils.GetSymbolPriceFormat(symbolExchangeInfo),
-            QuantityFormat = BinanceUtils.GetSymbolQuantityFormat(symbolExchangeInfo)
+            PriceFormat = symbolExchangeInfo.GetPriceFormat(),
+            QuantityFormat = symbolExchangeInfo.GetQuantityFormat()
         };
     }
 }

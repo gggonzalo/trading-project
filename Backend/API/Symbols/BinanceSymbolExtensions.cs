@@ -1,8 +1,8 @@
 using Binance.Net.Objects.Models.Spot;
 
-public static class BinanceUtils
+public static class BinanceSymbolExtensions
 {
-    public static PriceFormat GetSymbolPriceFormat(BinanceSymbol symbolInfo)
+    public static PriceFormat GetPriceFormat(this BinanceSymbol symbolInfo)
     {
         if (symbolInfo.PriceFilter == null) return new PriceFormat
         {
@@ -19,7 +19,7 @@ public static class BinanceUtils
         };
     }
 
-    public static QuantityFormat GetSymbolQuantityFormat(BinanceSymbol symbolInfo)
+    public static QuantityFormat GetQuantityFormat(this BinanceSymbol symbolInfo)
     {
         if (symbolInfo.LotSizeFilter == null) return new QuantityFormat
         {

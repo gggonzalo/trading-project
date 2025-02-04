@@ -5,8 +5,6 @@ using CryptoExchange.Net.Objects.Sockets;
 // TODO: Extract to interface so we can have data from different sources
 public class CandlesService(IBinanceRestClient binanceRestClient, IBinanceSocketClient binanceSocketClient)
 {
-    // TODO: Implement same methods for spot
-
     public async Task<IEnumerable<Candle>> GetCandlesAsync(string symbol, KlineInterval interval, DateTime? startTime = null, DateTime? endTime = null, int? limit = 1000)
     {
         var klinesResult = await binanceRestClient.SpotApi.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit);
@@ -14,7 +12,7 @@ public class CandlesService(IBinanceRestClient binanceRestClient, IBinanceSocket
 
         return klines.Select(k => new Candle
         {
-            Time = Utils.ConvertDateToUnixExpoch(k.OpenTime),
+            Time = k.OpenTime.ToUnixEpoch(),
             Open = k.OpenPrice,
             High = k.HighPrice,
             Low = k.LowPrice,
@@ -38,7 +36,7 @@ public class CandlesService(IBinanceRestClient binanceRestClient, IBinanceSocket
                     Interval = kline.Interval,
                     Candle = new Candle
                     {
-                        Time = Utils.ConvertDateToUnixExpoch(kline.OpenTime),
+                        Time = kline.OpenTime.ToUnixEpoch(),
                         Open = kline.OpenPrice,
                         High = kline.HighPrice,
                         Low = kline.LowPrice,
